@@ -1,0 +1,270 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workspaces WorkspaceMember[]
+  createdWorkspaces Workspace[] @relation("WorkspaceOwner")
+
+  @@map("users")
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner       User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  members     WorkspaceMember[]
+  socialAccounts SocialAccount[]
+  interactions   InteractionEvent[]
+  targets        Target[]
+  dmSequences    DmSequence[]
+  leads          Lead[]
+  integrations   Integration[]
+  exportLogs     ExportLog[]
+  quotas         Quota[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String   @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        String   @default("member") // owner, admin, member
+  createdAt   DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@unique([userId, workspaceId])
+  @@map("workspace_members")
+}
+
+model SocialAccount {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  platform        String   // instagram, tiktok, linkedin, twitter
+  platformUserId  String   // ID de l'utilisateur sur la plateforme
+  platformUsername String
+  accessToken     String   // Chiffré
+  refreshToken    String?  // Chiffré
+  tokenExpiresAt  DateTime?
+  scopes          String[] // Permissions accordées
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  workspace     Workspace      @relation(fields: [workspaceId], references: [id])
+  interactions  InteractionEvent[]
+  targets       Target[]
+  dmSequences   DmSequence[]
+  quotas        Quota[]
+
+  @@unique([workspaceId, platform, platformUserId])
+  @@map("social_accounts")
+}
+
+model InteractionEvent {
+  id                String   @id @default(cuid())
+  workspaceId       String
+  socialAccountId   String
+  platform          String
+  type              String   // like, comment, follow, share, save, dm_received
+  actorId           String   // ID de la personne qui a interagi
+  actorUsername     String
+  actorName         String?
+  contentRef        String?  // ID du post/vidéo concerné
+  contentUrl        String?
+  message           String?  // Pour les commentaires/DM
+  rawData           Json?    // Données brutes de l'API
+  createdAt         DateTime @default(now())
+
+  workspace     Workspace     @relation(fields: [workspaceId], references: [id])
+  socialAccount SocialAccount @relation(fields: [socialAccountId], references: [id])
+  target        Target?       @relation(fields: [targetId], references: [id])
+  targetId      String?
+
+  @@index([workspaceId, createdAt])
+  @@index([socialAccountId, createdAt])
+  @@index([actorId, platform])
+  @@map("interaction_events")
+}
+
+model Target {
+  id                String   @id @default(cuid())
+  workspaceId       String
+  socialAccountId   String?
+  platform          String
+  platformUserId    String   // ID de l'utilisateur sur la plateforme
+  username          String
+  name              String?
+  interestScore     Float    @default(0) // 0-100
+  isTargetable      Boolean  @default(false)
+  lastInteractionAt DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  workspace     Workspace      @relation(fields: [workspaceId], references: [id])
+  socialAccount SocialAccount? @relation(fields: [socialAccountId], references: [id])
+  interactions  InteractionEvent[]
+  dmSequences   DmSequence[]
+  lead          Lead?
+
+  @@unique([workspaceId, platform, platformUserId])
+  @@index([workspaceId, isTargetable, interestScore])
+  @@map("targets")
+}
+
+model DmSequence {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  socialAccountId String
+  targetId        String
+  status          String   @default("pending") // pending, sent, replied, completed, failed
+  currentStep     Int      @default(0)
+  totalSteps      Int      @default(1)
+  lastMessageAt   DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  workspace     Workspace     @relation(fields: [workspaceId], references: [id])
+  socialAccount SocialAccount @relation(fields: [socialAccountId], references: [id])
+  target        Target        @relation(fields: [targetId], references: [id])
+  messages      DmMessage[]
+
+  @@index([workspaceId, status])
+  @@map("dm_sequences")
+}
+
+model DmMessage {
+  id          String   @id @default(cuid())
+  sequenceId  String
+  direction   String   // sent, received
+  content     String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  sequence DmSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+
+  @@index([sequenceId, createdAt])
+  @@map("dm_messages")
+}
+
+model Lead {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  targetId       String?  @unique // Optionnel si créé manuellement
+  platform        String
+  platformUserId  String?
+  username        String
+  name            String?
+  phone           String?
+  email           String?
+  source          String   // dm, form, manual
+  status          String   @default("new") // new, contacted, in_progress, converted, refused
+  interestScore   Float?
+  notes           String?
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  target    Target?   @relation(fields: [targetId], references: [id])
+  events    LeadEvent[]
+  exports   ExportLog[]
+
+  @@index([workspaceId, status, createdAt])
+  @@index([phone])
+  @@map("leads")
+}
+
+model LeadEvent {
+  id          String   @id @default(cuid())
+  leadId      String
+  type        String   // created, updated, status_changed, exported
+  description String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, createdAt])
+  @@map("lead_events")
+}
+
+model Integration {
+  id          String   @id @default(cuid())
+  workspaceId String
+  type        String   // google_sheets, notion, webhook
+  name        String
+  config      Json     // Configuration spécifique (credentials, webhook URL, etc.)
+  isActive    Boolean  @default(true)
+  autoSync    Boolean  @default(false) // Sync automatique des nouveaux leads
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  exports   ExportLog[]
+
+  @@map("integrations")
+}
+
+model ExportLog {
+  id             String   @id @default(cuid())
+  workspaceId    String
+  integrationId  String?
+  leadId         String?
+  type           String   // csv, google_sheets, notion, webhook
+  status         String   // success, failed
+  errorMessage   String?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  workspace  Workspace  @relation(fields: [workspaceId], references: [id])
+  integration Integration? @relation(fields: [integrationId], references: [id])
+  lead        Lead?        @relation(fields: [leadId], references: [id])
+
+  @@index([workspaceId, createdAt])
+  @@map("export_logs")
+}
+
+model Quota {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  socialAccountId String
+  type            String   // dm_per_hour, dm_per_day, api_calls_per_hour
+  limit           Int
+  current         Int      @default(0)
+  resetAt         DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  workspace     Workspace     @relation(fields: [workspaceId], references: [id])
+  socialAccount SocialAccount @relation(fields: [socialAccountId], references: [id])
+
+  @@unique([workspaceId, socialAccountId, type, resetAt])
+  @@index([socialAccountId, resetAt])
+  @@map("quotas")
+}
+
