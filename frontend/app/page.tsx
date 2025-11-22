@@ -266,15 +266,20 @@ export default function LandingPage() {
             <h3 className="font-display text-2xl text-white">Tout l’écosystème social & CRM, plug-and-play</h3>
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
-            {connectors.map((item) => (
-              <div
-                key={item.name}
-                className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white/70"
-              >
-                <span className="text-2xl">{item.emoji}</span>
-                <p>{item.name}</p>
-              </div>
-            ))}
+            {connectors.map((item) => {
+              const Icon = item.icon
+              return (
+                <div
+                  key={item.name}
+                  className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white/70"
+                >
+                  <div className={`flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br ${item.color}`}>
+                    <Icon className="h-4 w-4 text-white" />
+                  </div>
+                  <p>{item.name}</p>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>
