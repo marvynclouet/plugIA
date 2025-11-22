@@ -264,6 +264,25 @@ export default function LandingPage() {
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
             {connectors.map((item) => {
+              if (item.useImage) {
+                return (
+                  <div
+                    key={item.name}
+                    className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white/70"
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5">
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        width={32}
+                        height={32}
+                        className="h-6 w-6 object-contain"
+                      />
+                    </div>
+                    <p>{item.name}</p>
+                  </div>
+                )
+              }
               const Icon = item.icon
               return (
                 <div
