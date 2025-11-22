@@ -135,7 +135,7 @@ const pricingPlans = [
     cta: 'Essayer Premium',
     popular: true,
     icon: Zap,
-    highlight: 'Plan effet boule de neige',
+    highlight: 'Le + rentable',
   },
   {
     name: 'Ultra Premium',
