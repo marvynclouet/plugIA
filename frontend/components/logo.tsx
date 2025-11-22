@@ -7,19 +7,32 @@ export function Logo({ className = 'h-8 w-8' }: { className?: string }) {
         xmlns="http://www.w3.org/2000/svg"
         className="w-full h-full"
       >
-        {/* F avec effet glossy violet */}
         <defs>
+          {/* Gradient principal violet glossy */}
           <linearGradient id="fGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#A855F7" stopOpacity="1" />
-            <stop offset="50%" stopColor="#9333EA" stopOpacity="1" />
+            <stop offset="0%" stopColor="#C084FC" stopOpacity="1" />
+            <stop offset="30%" stopColor="#A855F7" stopOpacity="1" />
+            <stop offset="60%" stopColor="#9333EA" stopOpacity="1" />
             <stop offset="100%" stopColor="#7C3AED" stopOpacity="1" />
           </linearGradient>
-          <linearGradient id="fHighlight" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#E9D5FF" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#A855F7" stopOpacity="0.3" />
+          
+          {/* Highlight pour effet glossy */}
+          <linearGradient id="fHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#F3E8FF" stopOpacity="0.9" />
+            <stop offset="30%" stopColor="#E9D5FF" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="#A855F7" stopOpacity="0.2" />
           </linearGradient>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+          
+          {/* Gradient pour les reflets internes */}
+          <linearGradient id="fReflect" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#F3E8FF" stopOpacity="0.4" />
+            <stop offset="50%" stopColor="#C084FC" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#9333EA" stopOpacity="0.1" />
+          </linearGradient>
+          
+          {/* Glow effect */}
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="coloredBlur" />
             <feMerge>
               <feMergeNode in="coloredBlur" />
               <feMergeNode in="SourceGraphic" />
@@ -27,26 +40,75 @@ export function Logo({ className = 'h-8 w-8' }: { className?: string }) {
           </filter>
         </defs>
         
-        {/* Forme du F avec coins arrondis */}
+        {/* Forme du F avec coins très arrondis (effet blob/liquid) */}
         <path
-          d="M 20 15 L 20 85 L 65 85 L 65 70 L 35 70 L 35 50 L 60 50 L 60 35 L 35 35 L 35 15 Z"
+          d="M 18 12 
+             C 18 12, 18 15, 18 20
+             L 18 80
+             C 18 85, 20 88, 25 88
+             L 60 88
+             C 65 88, 68 86, 68 81
+             L 68 72
+             C 68 67, 66 65, 61 65
+             L 38 65
+             L 38 55
+             L 63 55
+             C 68 55, 70 53, 70 48
+             L 70 38
+             C 70 33, 68 31, 63 31
+             L 38 31
+             L 38 20
+             C 38 15, 36 12, 31 12
+             Z"
           fill="url(#fGradient)"
           filter="url(#glow)"
           style={{
-            filter: 'drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4))',
+            filter: 'drop-shadow(0 6px 20px rgba(168, 85, 247, 0.5))',
           }}
         />
         
-        {/* Highlights pour effet glossy */}
+        {/* Reflets glossy en haut */}
         <path
-          d="M 25 20 L 25 30 L 30 30 L 30 20 Z"
+          d="M 25 18 
+             C 25 18, 25 22, 25 26
+             L 30 26
+             C 30 22, 30 18, 25 18
+             Z"
           fill="url(#fHighlight)"
-          opacity="0.8"
+          opacity="0.9"
         />
+        
+        {/* Reflet glossy sur la barre horizontale du haut */}
         <path
-          d="M 25 40 L 25 45 L 55 45 L 55 40 Z"
-          fill="url(#fHighlight)"
+          d="M 30 38 
+             L 65 38
+             L 65 42
+             L 30 42
+             Z"
+          fill="url(#fReflect)"
+          opacity="0.7"
+        />
+        
+        {/* Reflet glossy sur la barre horizontale du milieu */}
+        <path
+          d="M 30 52 
+             L 60 52
+             L 60 56
+             L 30 56
+             Z"
+          fill="url(#fReflect)"
           opacity="0.6"
+        />
+        
+        {/* Lignes/swirls internes pour effet liquid */}
+        <path
+          d="M 22 25 
+             Q 28 22, 32 25
+             Q 28 28, 22 25"
+          fill="none"
+          stroke="#E9D5FF"
+          strokeWidth="1.5"
+          strokeOpacity="0.4"
         />
       </svg>
     </div>
