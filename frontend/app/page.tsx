@@ -59,33 +59,22 @@ const chatDemo = [
 
 const steps = [
   {
-    badge: 'Step 1',
-    title: 'Onboard tes réseaux',
-    copy: 'Instagram, TikTok, LinkedIn, X en OAuth officiel. Tokens chiffrés AES-256.',
-    code: `await flowia.connect({
-  platform: 'instagram',
-  workspaceId: 'crew-studio',
-})`,
+    badge: '1. Capter',
+    title: 'Capter',
+    copy: 'Ton contenu génère des interactions. Flow.IA les attrape toutes en temps réel, sans limite, sans oubli.',
+    code: null,
   },
   {
-    badge: 'Step 2',
-    title: 'Définis ton ton & prompts',
-    copy: 'Choisis ton ton (pro, chill, hype), les triggers et le nombre de follow-ups IA.',
-    code: `flowia.sequence({
-  trigger: ['comment', 'story_reply'],
-  maxMessages: 3,
-  persona: 'mentor_tiktok_fr',
-})`,
+    badge: '2. Engager',
+    title: 'Engager',
+    copy: 'Une IA analyse chaque profil, ouvre la discussion, répond, pose les bonnes questions et mène la personne jusqu'à l'action.',
+    code: null,
   },
   {
-    badge: 'Step 3',
-    title: 'Sync vers tes outils',
-    copy: 'Chaque info captée file en direct vers Sheets, Notion, CRM ou webhook.',
-    code: `flowia.sync({
-  destination: 'notion',
-  databaseId: 'lead-pulse',
-  auto: true,
-})`,
+    badge: '3. Convertir',
+    title: 'Convertir',
+    copy: 'Les prospects qualifiés (numéro, infos clés, intérêt) remontent automatiquement dans ton dashboard ou ton outil de gestion (Notion, Airtable, CRM, peu importe).',
+    code: null,
   },
 ]
 
@@ -274,9 +263,6 @@ export default function LandingPage() {
                 <CardTitle className="text-white">{step.title}</CardTitle>
                 <CardDescription>{step.copy}</CardDescription>
               </CardHeader>
-              <CardContent className="rounded-2xl bg-black/60 p-4 font-mono text-xs text-white/80">
-                <pre>{step.code}</pre>
-              </CardContent>
             </Card>
           ))}
         </div>
