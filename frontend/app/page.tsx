@@ -195,8 +195,7 @@ export default function LandingPage() {
               Convertis tes interactions socials en pipeline qualifié.
             </h1>
             <p className="text-lg text-white/70">
-              Flow IA analyse likes, DM, stories, commente en ton nom, récupère les numéros et push vers tes outils.
-              100% API officielles, 0 bannissement.
+              Flow.IA capte automatiquement tous les likes, commentaires, abonnements, partages et messages sur tes réseaux sociaux, puis engage la conversation avec une IA calibrée pour qualifier, filtrer et récupérer les numéros directement dans ton dashboard.
             </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild className="gap-2">
