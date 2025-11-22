@@ -89,7 +89,7 @@ export default function AccountsPage() {
         <div>
           <h1 className="font-display text-3xl text-white md:text-4xl">Brancher mes réseaux</h1>
           <p className="text-white/60">
-            Active l’IA VistaFlow sur chacun de tes playgrounds. Les quotas & DM respectent les règles officielles des APIs.
+            Active l'IA Flow IA sur chacun de tes playgrounds. Les quotas & DM respectent les règles officielles des APIs.
           </p>
         </div>
         {workspaces && workspaces.length > 0 && (

@@ -20,7 +20,7 @@ const features = [
   },
   {
     title: 'API & webhooks',
-    description: 'Connecte VistaFlow à ton CRM ou ton stack no-code. Webhooks sécurisés + audit log.',
+    description: 'Connecte Flow IA à ton CRM ou ton stack no-code. Webhooks sécurisés + audit log.',
   },
 ]
 
@@ -32,7 +32,7 @@ const chatDemo = [
     text: '“Hey c’est lourd ce que tu fais 🔥 je veux apprendre”',
   },
   {
-    actor: 'VistaFlow DM',
+    actor: 'Flow IA DM',
     tone: 'text-white',
     tag: 'DM IA #1',
     text: '“Yo Léo ! Merci pour le love. Tu veux qu’on t’envoie la formation ? 👇”',
@@ -44,7 +44,7 @@ const chatDemo = [
     text: '“Yes go, j’ai 5k followers mais besoin de process 🙏”',
   },
   {
-    actor: 'VistaFlow DM',
+    actor: 'Flow IA DM',
     tone: 'text-white',
     tag: 'DM IA #2',
     text: '“Drop ton 06 ou WhatsApp et on t’ajoute dans la session privée.”',
@@ -62,7 +62,7 @@ const steps = [
     badge: 'Step 1',
     title: 'Onboard tes réseaux',
     copy: 'Instagram, TikTok, LinkedIn, X en OAuth officiel. Tokens chiffrés AES-256.',
-    code: `await vistaflow.connect({
+    code: `await flowia.connect({
   platform: 'instagram',
   workspaceId: 'crew-studio',
 })`,
@@ -71,7 +71,7 @@ const steps = [
     badge: 'Step 2',
     title: 'Définis ton ton & prompts',
     copy: 'Choisis ton ton (pro, chill, hype), les triggers et le nombre de follow-ups IA.',
-    code: `vistaflow.sequence({
+    code: `flowia.sequence({
   trigger: ['comment', 'story_reply'],
   maxMessages: 3,
   persona: 'mentor_tiktok_fr',
@@ -81,7 +81,7 @@ const steps = [
     badge: 'Step 3',
     title: 'Sync vers tes outils',
     copy: 'Chaque info captée file en direct vers Sheets, Notion, CRM ou webhook.',
-    code: `vistaflow.sync({
+    code: `flowia.sync({
   destination: 'notion',
   databaseId: 'lead-pulse',
   auto: true,
@@ -106,7 +106,7 @@ const testimonials = [
   {
     author: 'Lou, CEO @ Studio Pulse',
     message:
-      'VistaFlow nous a fait gagner 11h par semaine. 32 leads par campagne TikTok, 18% de conversion sur WhatsApp.',
+      'Flow IA nous a fait gagner 11h par semaine. 32 leads par campagne TikTok, 18% de conversion sur WhatsApp.',
   },
   {
     author: 'Eliott, Growth @ Label 808',
@@ -195,7 +195,7 @@ export default function LandingPage() {
               Convertis tes interactions socials en pipeline qualifié.
             </h1>
             <p className="text-lg text-white/70">
-              VistaFlow analyse likes, DM, stories, commente en ton nom, récupère les numéros et push vers tes outils.
+              Flow IA analyse likes, DM, stories, commente en ton nom, récupère les numéros et push vers tes outils.
               100% API officielles, 0 bannissement.
             </p>
             <div className="flex flex-wrap gap-3">
@@ -264,7 +264,7 @@ export default function LandingPage() {
 
       <section className="space-y-10 px-4">
         <div className="text-center space-y-2">
-          <p className="text-xs uppercase tracking-[0.6em] text-white/40">How VistaFlow works</p>
+          <p className="text-xs uppercase tracking-[0.6em] text-white/40">How Flow IA works</p>
           <h2 className="font-display text-3xl text-white">3 étapes pour automatiser tes interactions sociales</h2>
         </div>
         <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-3">
@@ -419,14 +419,14 @@ export default function LandingPage() {
 
       <section className="mx-auto max-w-6xl rounded-[32px] border border-white/10 bg-gradient-to-br from-[#111827] to-[#070B13] p-10 text-center">
         <p className="text-xs uppercase tracking-[0.6em] text-white/40">Prêt à scaler ton crew ?</p>
-        <h3 className="mt-4 font-display text-3xl text-white">VistaFlow Crew Access</h3>
+        <h3 className="mt-4 font-display text-3xl text-white">Flow IA Crew Access</h3>
         <p className="mt-3 text-white/70">Plan Beta limité. Support white-glove + templates AI personnalisés.</p>
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           <Button asChild>
             <Link href="/login">Onboard maintenant</Link>
           </Button>
           <Button variant="ghost" asChild>
-            <Link href="mailto:hey@vistaflow.ai">Parler avec nous</Link>
+            <Link href="mailto:hey@flowia.ai">Parler avec nous</Link>
           </Button>
         </div>
       </section>

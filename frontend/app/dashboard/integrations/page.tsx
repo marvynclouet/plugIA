@@ -83,7 +83,7 @@ export default function IntegrationsPage() {
             </select>
           </div>
           <p className="md:col-span-2 text-sm text-white/60">
-            Configure tes intégrations ici. Chaque lead mis à jour dans VistaFlow déclenche automatiquement un push
+            Configure tes intégrations ici. Chaque lead mis à jour dans Flow IA déclenche automatiquement un push
             vers tes outils branchés. Tu contrôles l’auto-sync par workspace.
           </p>
         </div>

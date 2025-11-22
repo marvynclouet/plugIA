@@ -17,7 +17,7 @@ const spaceGrotesk = Space_Grotesk({
 })
 
 export const metadata: Metadata = {
-  title: 'VistaFlow - Gestion des Interactions Social Media',
+  title: 'Flow IA - Gestion des Interactions Social Media',
   description: 'Automatisez la gestion de vos interactions sur les réseaux sociaux',
 }
 
@@ -40,7 +40,7 @@ export default function RootLayout({
           <div className="flex min-h-screen flex-col">
             <div className="flex-1">{children}</div>
             <footer className="border-t border-white/10 bg-black/40 py-6 text-center text-sm text-white/60">
-              <p>© {new Date().getFullYear()} VistaFlow ·{' '}
+              <p>© {new Date().getFullYear()} Flow IA ·{' '}
                 <Link href="/legal/privacy" className="text-white hover:underline">
                   Politique de confidentialité
                 </Link>

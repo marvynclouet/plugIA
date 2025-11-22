@@ -58,7 +58,7 @@ export default function LoginPage() {
           </Badge>
           <div className="space-y-4">
             <h1 className="font-display text-4xl leading-tight text-white md:text-5xl">
-              VistaFlow ✨ <br /> Ton copilote IA pour convertir tes interactions socials en leads chauds.
+              Flow IA ✨ <br /> Ton copilote IA pour convertir tes interactions socials en leads chauds.
             </h1>
             <p className="text-lg text-white/70">
               Analyse chaque like, DM et commentaire en temps réel. Automatise des conversations ultra personnalisées
@@ -119,7 +119,7 @@ export default function LoginPage() {
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="studio@vistaflow.com"
+                  placeholder="studio@flowia.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -140,7 +140,7 @@ export default function LoginPage() {
               </div>
 
               <Button type="submit" disabled={loading} className="w-full text-base">
-                {loading ? 'Chargement...' : isLogin ? 'Se connecter' : "Lancer VistaFlow"}
+                {loading ? 'Chargement...' : isLogin ? 'Se connecter' : "Lancer Flow IA"}
               </Button>
 
               <div className="text-center text-sm text-white/60">

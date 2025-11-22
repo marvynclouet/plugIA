@@ -8,6 +8,7 @@ import { LayoutDashboard, Link2, Share2, Users } from 'lucide-react'
 import { logout, getToken } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Logo } from '@/components/logo'
 import { cn } from '@/lib/utils'
 
 const routes = [
@@ -34,12 +35,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
             <Link href="/dashboard" className="flex items-center gap-3">
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7C5CFF] to-[#44E2FF] text-lg font-semibold">
-                VF
-                <span className="absolute inset-0 animate-ping rounded-2xl bg-[#7C5CFF]/40" />
+              <div className="relative">
+                <Logo className="h-10 w-10" />
+                <span className="absolute inset-0 animate-ping rounded-2xl bg-[#A855F7]/40" />
               </div>
               <div>
-                <p className="font-display text-lg text-white">VistaFlow</p>
+                <p className="font-display text-lg text-white">FLOW IA</p>
                 <p className="text-xs uppercase tracking-[0.4em] text-white/40">Social AI Ops</p>
               </div>
             </Link>

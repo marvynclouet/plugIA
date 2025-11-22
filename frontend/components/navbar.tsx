@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Sparkles, Menu, X } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
+import { Logo } from '@/components/logo'
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -11,11 +12,9 @@ export function Navbar() {
   return (
     <nav className="fixed top-0 z-50 w-full border-b border-white/10 bg-black/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#7C5CFF] to-[#44E2FF]">
-            <Sparkles className="h-4 w-4 text-white" />
-          </div>
-          <span className="font-display text-xl font-semibold text-white">VistaFlow</span>
+        <Link href="/" className="flex items-center gap-3">
+          <Logo className="h-10 w-10" />
+          <span className="font-display text-xl font-semibold text-white">FLOW IA</span>
         </Link>
 
         <div className="hidden items-center gap-6 md:flex">
