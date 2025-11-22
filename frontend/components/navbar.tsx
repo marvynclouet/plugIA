@@ -13,7 +13,7 @@ export function Navbar() {
     <nav className="fixed top-0 z-50 w-full border-b border-white/10 bg-black/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
         <Link href="/" className="flex items-center">
-          <Logo className="h-20 w-20" />
+          <Logo className="h-24 w-24" />
         </Link>
 
         <div className="hidden items-center gap-6 md:flex">
