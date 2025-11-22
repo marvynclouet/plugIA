@@ -16,7 +16,7 @@ export function Navbar() {
           <Logo className="h-24 w-24" />
         </Link>
 
-        <div className="hidden items-center gap-6 md:flex">
+        <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-6 md:flex">
           <Link href="#features" className="text-sm text-white/70 hover:text-white transition-colors">
             Fonctionnalités
           </Link>
