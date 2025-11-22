@@ -36,7 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="flex items-center gap-4">
             <Link href="/dashboard" className="flex items-center gap-3">
               <div className="relative">
-                <Logo className="h-10 w-10" />
+                <Logo className="h-14 w-14" />
                 <span className="absolute inset-0 animate-ping rounded-2xl bg-[#A855F7]/40" />
               </div>
               <div>

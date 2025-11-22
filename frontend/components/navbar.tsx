@@ -13,7 +13,7 @@ export function Navbar() {
     <nav className="fixed top-0 z-50 w-full border-b border-white/10 bg-black/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
         <Link href="/" className="flex items-center gap-3">
-          <Logo className="h-10 w-10" />
+          <Logo className="h-14 w-14" />
           <span className="font-display text-xl font-semibold text-white">FLOW IA</span>
         </Link>
 
