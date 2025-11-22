@@ -4,7 +4,7 @@
 
 - Node.js 18+ installé
 - Docker et Docker Compose installés
-- Compte Meta Developer (pour Instagram)
+- Compte Meta Developer (pour Instagram et Facebook)
 - Clé API OpenAI (pour l'extraction de numéros)
 
 ## Installation
@@ -42,6 +42,8 @@ JWT_SECRET="votre-secret-jwt-tres-securise"
 META_APP_ID="votre-meta-app-id"
 META_APP_SECRET="votre-meta-app-secret"
 META_REDIRECT_URI="http://localhost:3000/auth/instagram/callback"
+# Optionnel : URL de callback spécifique pour Facebook (sinon construit automatiquement)
+# META_FACEBOOK_REDIRECT_URI="http://localhost:3000/auth/facebook/callback"
 OPENAI_API_KEY="votre-openai-api-key"
 ENCRYPTION_KEY="votre-cle-32-caracteres-pour-chiffrement"
 ```
@@ -92,10 +94,11 @@ npm run dev
 ## Premiers pas
 
 1. **Créer un compte** sur http://localhost:3000/login
-2. **Connecter Instagram** :
+2. **Connecter vos réseaux sociaux** :
    - Aller dans "Comptes"
-   - Cliquer sur "Connecter Instagram"
+   - Cliquer sur "Connecter Instagram" ou "Connecter Facebook"
    - Autoriser l'application Meta
+   - Pour Facebook, vous pourrez choisir les Pages à connecter
 3. **Collecter les interactions** :
    - Les interactions sont collectées automatiquement toutes les 15 minutes
    - Vous pouvez aussi déclencher manuellement via l'API : `POST /interactions/collect/:accountId`
@@ -103,15 +106,21 @@ npm run dev
    - Aller dans "Leads" pour voir les personnes intéressées
    - Les leads sont créés automatiquement quand un numéro de téléphone est détecté
 
-## Configuration Meta / Instagram
+## Configuration Meta / Instagram / Facebook
 
 1. Aller sur https://developers.facebook.com/
 2. Créer une nouvelle application
-3. Ajouter le produit "Instagram Basic Display" ou "Instagram Graph API"
-4. Configurer les URLs de redirection OAuth
+3. Ajouter les produits :
+   - **Instagram Graph API** (pour Instagram)
+   - **Facebook Login** (pour Facebook)
+4. Configurer les URLs de redirection OAuth :
+   - Instagram : `http://localhost:3000/auth/instagram/callback` (ou votre domaine en prod)
+   - Facebook : `http://localhost:3000/auth/facebook/callback` (ou votre domaine en prod)
 5. Récupérer l'App ID et l'App Secret
 
-**Important** : Pour envoyer des DM, vous devez utiliser un compte Instagram Business et demander les permissions appropriées.
+**Important** :
+- Pour Instagram : vous devez utiliser un compte Instagram Business et demander les permissions appropriées pour envoyer des DM
+- Pour Facebook : vous devez avoir une Page Facebook et demander les permissions `pages_manage_posts`, `pages_messaging`, `pages_read_engagement`
 
 ## Troubleshooting
 

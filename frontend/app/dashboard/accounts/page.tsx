@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
-import { Instagram, Linkedin, Music, Twitter } from 'lucide-react'
+import { Instagram, Linkedin, Music, Twitter, Facebook } from 'lucide-react'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -16,6 +16,13 @@ const platformCards = [
     gradient: 'from-[#F58529] via-[#DD2A7B] to-[#515BD4]',
     icon: Instagram,
     tagline: 'DM + interactions + reels insights',
+  },
+  {
+    id: 'facebook',
+    name: 'Facebook',
+    gradient: 'from-[#1877F2] to-[#42A5F5]',
+    icon: Facebook,
+    tagline: 'Pages + Messenger + posts engagement',
   },
   {
     id: 'tiktok',

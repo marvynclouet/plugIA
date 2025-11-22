@@ -90,6 +90,7 @@ const steps = [
 
 const connectors = [
   { name: 'Instagram', emoji: '📸' },
+  { name: 'Facebook', emoji: '👥' },
   { name: 'TikTok', emoji: '🎵' },
   { name: 'LinkedIn', emoji: '💼' },
   { name: 'X / Twitter', emoji: '🐦' },

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { InstagramService } from './providers/instagram.service';
+import { FacebookService } from './providers/facebook.service';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class SocialAccountsService {
   constructor(
     private prisma: PrismaService,
     private instagramService: InstagramService,
+    private facebookService: FacebookService,
   ) {}
 
   private encrypt(text: string): string {
@@ -123,6 +125,32 @@ export class SocialAccountsService {
         ? new Date(Date.now() + tokens.expires_in * 1000)
         : null,
       scopes: ['instagram_basic', 'instagram_manage_messages', 'pages_read_engagement'],
+    });
+  }
+
+  async getFacebookAuthUrl(workspaceId: string) {
+    return this.facebookService.getAuthUrl(workspaceId);
+  }
+
+  async handleFacebookCallback(code: string, workspaceId: string) {
+    const tokens = await this.facebookService.exchangeCode(code);
+    const userInfo = await this.facebookService.getUserInfo(
+      tokens.access_token,
+    );
+    
+    // Pour Facebook, on peut aussi récupérer les Pages associées
+    // Ici on stocke le compte utilisateur principal, les Pages seront gérées séparément si besoin
+    const pages = await this.facebookService.getPages(tokens.access_token);
+
+    return this.create(workspaceId, 'facebook', {
+      platformUserId: userInfo.id,
+      platformUsername: userInfo.name || userInfo.email || userInfo.id,
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+      tokenExpiresAt: tokens.expires_in
+        ? new Date(Date.now() + tokens.expires_in * 1000)
+        : null,
+      scopes: ['pages_manage_posts', 'pages_messaging', 'pages_read_engagement', 'pages_show_list'],
     });
   }
 }

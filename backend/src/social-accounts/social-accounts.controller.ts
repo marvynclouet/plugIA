@@ -23,6 +23,21 @@ export class SocialAccountsController {
     return this.socialAccountsService.handleInstagramCallback(code, workspaceId);
   }
 
+  @Get('facebook/auth-url')
+  async getFacebookAuthUrl(@Query('workspaceId') workspaceId: string) {
+    return {
+      url: await this.socialAccountsService.getFacebookAuthUrl(workspaceId),
+    };
+  }
+
+  @Get('facebook/callback')
+  async handleFacebookCallback(
+    @Query('code') code: string,
+    @Query('workspaceId') workspaceId: string,
+  ) {
+    return this.socialAccountsService.handleFacebookCallback(code, workspaceId);
+  }
+
   @Get('workspace/:workspaceId')
   async findAll(
     @CurrentUser() user: any,
