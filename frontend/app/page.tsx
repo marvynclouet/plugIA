@@ -1,5 +1,17 @@
 import Link from 'next/link'
 import { ArrowRight, Play, Check, Zap, Crown, Sparkles } from 'lucide-react'
+import { 
+  FaInstagram, 
+  FaFacebook, 
+  FaTiktok, 
+  FaLinkedin, 
+  FaTwitter,
+  FaEnvelope,
+  FaTable,
+  FaBrain,
+  FaSlack,
+  FaLink
+} from 'react-icons/fa'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -76,16 +88,16 @@ const steps = [
 ]
 
 const connectors = [
-  { name: 'Instagram', emoji: '📸' },
-  { name: 'Facebook', emoji: '👥' },
-  { name: 'TikTok', emoji: '🎵' },
-  { name: 'LinkedIn', emoji: '💼' },
-  { name: 'X / Twitter', emoji: '🐦' },
-  { name: 'Gmail', emoji: '✉️' },
-  { name: 'Google Sheets', emoji: '📊' },
-  { name: 'Notion', emoji: '🧠' },
-  { name: 'Slack', emoji: '💬' },
-  { name: 'Webhook', emoji: '🔗' },
+  { name: 'Instagram', icon: FaInstagram, color: 'from-[#F58529] via-[#DD2A7B] to-[#515BD4]' },
+  { name: 'Facebook', icon: FaFacebook, color: 'from-[#1877F2] to-[#42A5F5]' },
+  { name: 'TikTok', icon: FaTiktok, color: 'from-[#25F4EE] to-[#FE2C55]' },
+  { name: 'LinkedIn', icon: FaLinkedin, color: 'from-[#0077B5] to-[#00A0DC]' },
+  { name: 'X / Twitter', icon: FaTwitter, color: 'from-[#4B4B4B] to-[#0F0F0F]' },
+  { name: 'Gmail', icon: FaEnvelope, color: 'from-[#EA4335] to-[#FBBC04]' },
+  { name: 'Google Sheets', icon: FaTable, color: 'from-[#0F9D58] to-[#34A853]' },
+  { name: 'Notion', icon: FaBrain, color: 'from-[#000000] to-[#37352F]' },
+  { name: 'Slack', icon: FaSlack, color: 'from-[#4A154B] to-[#E01E5A]' },
+  { name: 'Webhook', icon: FaLink, color: 'from-[#7C5CFF] to-[#44E2FF]' },
 ]
 
 
