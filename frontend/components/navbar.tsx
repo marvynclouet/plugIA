@@ -23,6 +23,9 @@ export function Navbar() {
           <Link href="#pricing" className="text-sm text-white/70 hover:text-white transition-colors">
             Tarification
           </Link>
+          <Link href="/about" className="text-sm text-white/70 hover:text-white transition-colors">
+            À propos
+          </Link>
           <Link href="/legal/privacy" className="text-sm text-white/70 hover:text-white transition-colors">
             Confidentialité
           </Link>
@@ -65,6 +68,13 @@ export function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Tarification
+            </Link>
+            <Link
+              href="/about"
+              className="text-sm text-white/70 hover:text-white transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              À propos
             </Link>
             <Link
               href="/legal/privacy"
