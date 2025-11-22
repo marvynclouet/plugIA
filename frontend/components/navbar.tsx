@@ -23,11 +23,8 @@ export function Navbar() {
           <Link href="#pricing" className="text-sm text-white/70 hover:text-white transition-colors">
             Tarification
           </Link>
-          <Link href="/about" className="text-sm text-white/70 hover:text-white transition-colors">
+          <Link href="#about" className="text-sm text-white/70 hover:text-white transition-colors">
             À propos
-          </Link>
-          <Link href="/legal/privacy" className="text-sm text-white/70 hover:text-white transition-colors">
-            Confidentialité
           </Link>
         </div>
 
@@ -70,18 +67,11 @@ export function Navbar() {
               Tarification
             </Link>
             <Link
-              href="/about"
+              href="#about"
               className="text-sm text-white/70 hover:text-white transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               À propos
-            </Link>
-            <Link
-              href="/legal/privacy"
-              className="text-sm text-white/70 hover:text-white transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Confidentialité
             </Link>
             <div className="flex flex-col gap-2 pt-4 border-t border-white/10">
               <Button variant="ghost" asChild className="w-full justify-start">
