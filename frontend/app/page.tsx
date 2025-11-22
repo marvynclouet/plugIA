@@ -88,18 +88,6 @@ const connectors = [
   { name: 'Webhook', emoji: '🔗' },
 ]
 
-const testimonials = [
-  {
-    author: 'Lou, CEO @ Studio Pulse',
-    message:
-      'Flow IA nous a fait gagner 11h par semaine. 32 leads par campagne TikTok, 18% de conversion sur WhatsApp.',
-  },
-  {
-    author: 'Eliott, Growth @ Label 808',
-    message:
-      "Les DM auto sont plus humains que nos messages manuels. On récupère des numéros + consentements en 2 échanges.",
-  },
-]
 
 const pricingPlans = [
   {
@@ -255,17 +243,6 @@ export default function LandingPage() {
                 <CardDescription className="text-white/80">{step.copy}</CardDescription>
               </CardHeader>
             </Card>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl rounded-[32px] border border-white/10 bg-white/5 p-10 px-6">
-        <div className="grid gap-6 md:grid-cols-3">
-          {testimonials.map((testimonial) => (
-            <div key={testimonial.author} className="space-y-3 rounded-3xl border border-white/5 bg-black/30 p-6">
-              <p className="text-base text-white/80">{testimonial.message}</p>
-              <p className="text-sm text-white/40">{testimonial.author}</p>
-            </div>
           ))}
         </div>
       </section>
