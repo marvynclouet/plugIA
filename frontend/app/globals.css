@@ -32,6 +32,10 @@
     @apply border-border antialiased;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground;
     background-image:
