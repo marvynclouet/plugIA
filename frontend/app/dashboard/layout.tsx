@@ -34,19 +34,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#050914]/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="flex items-center gap-3">
+            <Link href="/dashboard" className="flex items-center">
               <div className="relative">
-                <Logo className="h-14 w-14" />
+                <Logo className="h-20 w-20" />
                 <span className="absolute inset-0 animate-ping rounded-2xl bg-[#A855F7]/40" />
               </div>
-              <div>
-                <p className="font-display text-lg text-white">FLOW IA</p>
-                <p className="text-xs uppercase tracking-[0.4em] text-white/40">Social AI Ops</p>
-              </div>
             </Link>
-            <Badge variant="ghost" className="hidden items-center gap-1 text-xs text-white/60 md:flex">
-              ⚡ Squad Boss Mode
-            </Badge>
           </div>
 
           <div className="flex items-center gap-2 rounded-full bg-white/5 p-1">
