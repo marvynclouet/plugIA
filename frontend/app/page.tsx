@@ -102,11 +102,6 @@ const testimonials = [
     message:
       "Les DM auto sont plus humains que nos messages manuels. On récupère des numéros + consentements en 2 échanges.",
   },
-  {
-    author: 'Cam, Community Builder',
-    message:
-      'Anti-spam intégré. On respecte les quotas Meta/X tout en gardant un pipeline plein. On pilote tout depuis Pulse.',
-  },
 ]
 
 const pricingPlans = [
