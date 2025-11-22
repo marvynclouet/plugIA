@@ -1,4 +1,14 @@
+'use client'
+
+import { useId } from 'react'
+
 export function Logo({ className = 'h-8 w-8' }: { className?: string }) {
+  const id = useId()
+  const gradientId = `fGradient-${id}`
+  const highlightId = `fHighlight-${id}`
+  const reflectId = `fReflect-${id}`
+  const glowId = `glow-${id}`
+
   return (
     <div className={className} style={{ position: 'relative' }}>
       <svg
@@ -9,7 +19,7 @@ export function Logo({ className = 'h-8 w-8' }: { className?: string }) {
       >
         <defs>
           {/* Gradient principal violet glossy */}
-          <linearGradient id="fGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#C084FC" stopOpacity="1" />
             <stop offset="30%" stopColor="#A855F7" stopOpacity="1" />
             <stop offset="60%" stopColor="#9333EA" stopOpacity="1" />
@@ -17,21 +27,21 @@ export function Logo({ className = 'h-8 w-8' }: { className?: string }) {
           </linearGradient>
           
           {/* Highlight pour effet glossy */}
-          <linearGradient id="fHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
+          <linearGradient id={highlightId} x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#F3E8FF" stopOpacity="0.9" />
             <stop offset="30%" stopColor="#E9D5FF" stopOpacity="0.5" />
             <stop offset="100%" stopColor="#A855F7" stopOpacity="0.2" />
           </linearGradient>
           
           {/* Gradient pour les reflets internes */}
-          <linearGradient id="fReflect" x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient id={reflectId} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#F3E8FF" stopOpacity="0.4" />
             <stop offset="50%" stopColor="#C084FC" stopOpacity="0.2" />
             <stop offset="100%" stopColor="#9333EA" stopOpacity="0.1" />
           </linearGradient>
           
           {/* Glow effect */}
-          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <filter id={glowId} x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="4" result="coloredBlur" />
             <feMerge>
               <feMergeNode in="coloredBlur" />
@@ -60,8 +70,8 @@ export function Logo({ className = 'h-8 w-8' }: { className?: string }) {
              L 38 20
              C 38 15, 36 12, 31 12
              Z"
-          fill="url(#fGradient)"
-          filter="url(#glow)"
+          fill={`url(#${gradientId})`}
+          filter={`url(#${glowId})`}
           style={{
             filter: 'drop-shadow(0 6px 20px rgba(168, 85, 247, 0.5))',
           }}
@@ -74,7 +84,7 @@ export function Logo({ className = 'h-8 w-8' }: { className?: string }) {
              L 30 26
              C 30 22, 30 18, 25 18
              Z"
-          fill="url(#fHighlight)"
+          fill={`url(#${highlightId})`}
           opacity="0.9"
         />
         
@@ -85,7 +95,7 @@ export function Logo({ className = 'h-8 w-8' }: { className?: string }) {
              L 65 42
              L 30 42
              Z"
-          fill="url(#fReflect)"
+          fill={`url(#${reflectId})`}
           opacity="0.7"
         />
         
@@ -96,7 +106,7 @@ export function Logo({ className = 'h-8 w-8' }: { className?: string }) {
              L 60 56
              L 30 56
              Z"
-          fill="url(#fReflect)"
+          fill={`url(#${reflectId})`}
           opacity="0.6"
         />
         
