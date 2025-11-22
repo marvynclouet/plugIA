@@ -67,7 +67,7 @@ const steps = [
   {
     badge: '2. Engager',
     title: 'Engager',
-    copy: 'Une IA analyse chaque profil, ouvre la discussion, répond, pose les bonnes questions et mène la personne jusqu'à l'action.',
+    copy: "Une IA analyse chaque profil, ouvre la discussion, répond, pose les bonnes questions et mène la personne jusqu'à l'action.",
     code: null,
   },
   {
