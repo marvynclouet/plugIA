@@ -60,19 +60,16 @@ const chatDemo = [
 const steps = [
   {
     badge: '1. Capter',
-    title: 'Capter',
     copy: 'Ton contenu génère des interactions. Flow.IA les attrape toutes en temps réel, sans limite, sans oubli.',
     code: null,
   },
   {
     badge: '2. Engager',
-    title: 'Engager',
     copy: "Une IA analyse chaque profil, ouvre la discussion, répond, pose les bonnes questions et mène la personne jusqu'à l'action.",
     code: null,
   },
   {
     badge: '3. Convertir',
-    title: 'Convertir',
     copy: 'Les prospects qualifiés (numéro, infos clés, intérêt) remontent automatiquement dans ton dashboard ou ton outil de gestion (Notion, Airtable, CRM, peu importe).',
     code: null,
   },
@@ -251,12 +248,11 @@ export default function LandingPage() {
           <h2 className="font-display text-3xl text-white">3 étapes pour automatiser tes interactions sociales</h2>
         </div>
         <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-3">
-          {steps.map((step) => (
-            <Card key={step.title} className="border-white/10 bg-white/5">
+          {steps.map((step, idx) => (
+            <Card key={idx} className="border-white/10 bg-white/5">
               <CardHeader>
                 <Badge variant="ghost">{step.badge}</Badge>
-                <CardTitle className="text-white">{step.title}</CardTitle>
-                <CardDescription>{step.copy}</CardDescription>
+                <CardDescription className="text-white/80">{step.copy}</CardDescription>
               </CardHeader>
             </Card>
           ))}
