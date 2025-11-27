@@ -16,16 +16,14 @@
 npm run install:all
 ```
 
-### 2. Démarrer PostgreSQL et Redis
+### 2. Configurer Supabase (recommandé)
 
-```bash
-docker-compose up -d
-```
-
-Vérifier que les conteneurs sont bien démarrés :
-```bash
-docker-compose ps
-```
+1. Créez un projet sur [Supabase](https://supabase.com)
+2. Allez dans **Settings → Database**
+3. Copiez la **Connection string** (URI) - format:
+   ```
+   postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres?sslmode=require
+   ```
 
 ### 3. Configurer le backend
 
@@ -36,8 +34,14 @@ cp .env.example .env
 
 Éditer `backend/.env` avec vos valeurs :
 ```env
-DATABASE_URL="postgresql://vistaflow:vistaflow_dev@localhost:5432/vistaflow"
+# Supabase PostgreSQL (recommandé)
+DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres?sslmode=require"
+SHADOW_DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres?sslmode=require"
+
+# Redis (local ou Upstash)
 REDIS_URL="redis://localhost:6379"
+
+# Autres variables
 JWT_SECRET="votre-secret-jwt-tres-securise"
 META_APP_ID="votre-meta-app-id"
 META_APP_SECRET="votre-meta-app-secret"
@@ -46,6 +50,16 @@ META_REDIRECT_URI="http://localhost:3000/auth/instagram/callback"
 # META_FACEBOOK_REDIRECT_URI="http://localhost:3000/auth/facebook/callback"
 OPENAI_API_KEY="votre-openai-api-key"
 ENCRYPTION_KEY="votre-cle-32-caracteres-pour-chiffrement"
+```
+
+**Alternative: Base de données locale (Docker)**
+```bash
+docker-compose --profile local-db up -d
+```
+Puis dans `.env`:
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/vistaflow"
+SHADOW_DATABASE_URL="postgresql://postgres:postgres@localhost:5432/vistaflow_shadow"
 ```
 
 ### 4. Initialiser la base de données

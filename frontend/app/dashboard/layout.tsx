@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { LayoutDashboard, Link2, Share2, Users } from 'lucide-react'
 
 import { logout, getToken } from '@/lib/auth'
+import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Logo } from '@/components/logo'
@@ -14,6 +15,7 @@ import { cn } from '@/lib/utils'
 const routes = [
   { href: '/dashboard', label: 'Pulse', icon: LayoutDashboard, emoji: '📊' },
   { href: '/dashboard/accounts', label: 'Connect', icon: Share2, emoji: '🔗' },
+  { href: '/dashboard/interactions', label: 'Interactions', icon: Users, emoji: '💬' },
   { href: '/dashboard/leads', label: 'Leads', icon: Users, emoji: '🔥' },
   { href: '/dashboard/integrations', label: 'Sync', icon: Link2, emoji: '⚙️' },
 ]
@@ -21,13 +23,50 @@ const routes = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
+  const [isChecking, setIsChecking] = useState(true)
 
   useEffect(() => {
-    const token = getToken()
-    if (!token) {
-      router.push('/login')
+    const verifyAuth = async () => {
+      const token = getToken()
+      if (!token) {
+        window.location.href = '/login'
+        return
+      }
+
+      // Vérifier rapidement si le token est valide
+      try {
+        const response = await api.post('/auth/me')
+        if (response.status === 200 && response.data) {
+          setIsChecking(false)
+          return
+        }
+      } catch (error: any) {
+        // Si 401, token invalide - rediriger
+        if (error.response?.status === 401) {
+          localStorage.removeItem('token')
+          window.location.href = '/login'
+          return
+        }
+        // Pour les autres erreurs (réseau), on laisse passer
+      }
+      
+      setIsChecking(false)
     }
-  }, [router])
+
+    verifyAuth()
+  }, [])
+
+  // Afficher un loader pendant la vérification
+  if (isChecking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-[#66E4FF] border-t-transparent mx-auto" />
+          <p className="text-white/60">Vérification de l'authentification...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen">

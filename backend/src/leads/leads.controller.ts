@@ -27,6 +27,31 @@ export class LeadsController {
     return this.leadsService.findAll(workspaceId, filters);
   }
 
+  @Get('suggested-messages')
+  async getSuggestedMessages(
+    @Query('workspaceId') workspaceId: string,
+  ) {
+    return this.leadsService.getSuggestedMessages(workspaceId);
+  }
+
+  @Post('suggested-messages/:id/:action')
+  async validateMessage(
+    @Param('id') id: string,
+    @Param('action') action: 'validate' | 'reject',
+    @Query('workspaceId') workspaceId: string,
+    @Body() body?: { content?: string },
+  ) {
+    return this.leadsService.validateMessage(id, workspaceId, action, body?.content);
+  }
+
+  @Post('autopilot/validate-batch')
+  async validateBatch(
+    @Query('workspaceId') workspaceId: string,
+    @Body() body: { messageIds: string[] },
+  ) {
+    return this.leadsService.validateBatch(workspaceId, body.messageIds);
+  }
+
   @Get(':id')
   async findOne(
     @Param('id') id: string,

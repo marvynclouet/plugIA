@@ -140,11 +140,23 @@ export class TargetsService {
       where.interestScore = { gte: parseFloat(filters.minScore) };
     }
 
+    // Convertir limit et offset en nombres, avec validation
+    const limit = filters?.limit 
+      ? (typeof filters.limit === 'string' ? parseInt(filters.limit, 10) : Number(filters.limit))
+      : 100;
+    const offset = filters?.offset 
+      ? (typeof filters.offset === 'string' ? parseInt(filters.offset, 10) : Number(filters.offset))
+      : 0;
+
+    // S'assurer que ce sont des nombres valides
+    const take = isNaN(limit) || limit < 0 ? 100 : Math.floor(limit);
+    const skip = isNaN(offset) || offset < 0 ? 0 : Math.floor(offset);
+
     return this.prisma.target.findMany({
       where,
       orderBy: { interestScore: 'desc' },
-      take: filters?.limit || 100,
-      skip: filters?.offset || 0,
+      take,
+      skip,
       include: {
         _count: {
           select: {
@@ -153,6 +165,58 @@ export class TargetsService {
         },
       },
     });
+  }
+
+  /**
+   * Récupère les utilisateurs intéressés (score >= 15) avec leurs interactions
+   * C'est cette méthode qui permet de voir "TIENS lui a l'air intéressé"
+   */
+  async getInterestedUsers(workspaceId: string, platform?: string) {
+    // D'abord, mettre à jour les scores depuis les interactions récentes
+    await this.updateTargetsFromInteractions(workspaceId);
+
+    const where: any = {
+      workspaceId,
+      isTargetable: true, // Seulement les utilisateurs avec score >= 15
+      interestScore: { gte: 15 }, // Minimum 15 pour être considéré comme intéressé
+    };
+
+    if (platform) {
+      where.platform = platform;
+    }
+
+    const interestedUsers = await this.prisma.target.findMany({
+      where,
+      orderBy: { interestScore: 'desc' }, // Les plus intéressés en premier
+      take: 50, // Top 50
+      include: {
+        _count: {
+          select: {
+            interactions: true,
+          },
+        },
+        interactions: {
+          take: 5, // Les 5 dernières interactions
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    // Enrichir avec les détails des interactions
+    return interestedUsers.map((user) => ({
+      id: user.id,
+      username: user.username,
+      platform: user.platform,
+      interestScore: user.interestScore,
+      isTargetable: user.isTargetable,
+      lastInteractionAt: user.lastInteractionAt,
+      totalInteractions: user._count.interactions,
+      recentInteractions: user.interactions.map((interaction) => ({
+        type: interaction.type,
+        message: interaction.message,
+        createdAt: interaction.createdAt,
+      })),
+    }));
   }
 }
 

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
@@ -7,12 +7,18 @@ import { InstagramService } from '../social-accounts/providers/instagram.service
 
 @Injectable()
 export class DmService {
+  private readonly logger = new Logger(DmService.name);
+
   constructor(
-    @InjectQueue('dm') private dmQueue: Queue,
+    @Optional() @InjectQueue('dm') private dmQueue: Queue | null,
     private prisma: PrismaService,
     private socialAccountsService: SocialAccountsService,
     private instagramService: InstagramService,
-  ) {}
+  ) {
+    if (!this.dmQueue) {
+      this.logger.warn('⚠️ Queue DM non disponible (Redis non connecté). Les DM seront envoyés directement sans queue.');
+    }
+  }
 
   async checkQuota(accountId: string, type: string = 'dm_per_day'): Promise<boolean> {
     const now = new Date();
@@ -119,13 +125,19 @@ export class DmService {
       },
     });
 
-    // Ajouter à la queue
-    await this.dmQueue.add('send-dm', {
-      sequenceId: sequence.id,
-      accountId,
-      targetId,
-      message,
-    });
+    // Ajouter à la queue si disponible, sinon envoyer directement
+    if (this.dmQueue) {
+      await this.dmQueue.add('send-dm', {
+        sequenceId: sequence.id,
+        accountId,
+        targetId,
+        message,
+      });
+    } else {
+      // Si Redis n'est pas disponible, envoyer directement
+      this.logger.warn('⚠️ Queue non disponible, envoi direct du DM');
+      await this.executeDm(sequence.id, message);
+    }
 
     return sequence;
   }

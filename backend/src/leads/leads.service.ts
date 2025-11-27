@@ -16,6 +16,47 @@ export class LeadsService {
     });
   }
 
+  async getSuggestedMessages(workspaceId: string) {
+    return this.prisma.suggestedMessage.findMany({
+      where: {
+        workspaceId,
+        status: 'pending',
+      },
+      include: {
+        lead: true,
+      },
+      orderBy: {
+        generatedAt: 'desc',
+      },
+    });
+  }
+
+  async validateMessage(id: string, workspaceId: string, action: 'validate' | 'reject', content?: string) {
+    const message = await this.prisma.suggestedMessage.findFirst({
+      where: { id, workspaceId },
+      include: { lead: true }
+    });
+
+    if (!message) throw new Error('Message not found');
+
+    if (action === 'reject') {
+      return this.prisma.suggestedMessage.update({
+        where: { id },
+        data: { status: 'rejected' },
+      });
+    }
+
+    // Si validé
+    return this.prisma.suggestedMessage.update({
+      where: { id },
+      data: { 
+        status: 'validated',
+        validatedAt: new Date(),
+        content: content || message.content
+      },
+    });
+  }
+
   async extractPhoneNumber(text: string): Promise<string | null> {
     // Regex pour détecter les numéros français
     const phoneRegex = /(\+33|0)[1-9](\d{2}){4}/g;
@@ -177,11 +218,23 @@ export class LeadsService {
       ];
     }
 
+    // Convertir limit et offset en nombres, avec validation
+    const limit = filters?.limit 
+      ? (typeof filters.limit === 'string' ? parseInt(filters.limit, 10) : Number(filters.limit))
+      : 100;
+    const offset = filters?.offset 
+      ? (typeof filters.offset === 'string' ? parseInt(filters.offset, 10) : Number(filters.offset))
+      : 0;
+
+    // S'assurer que ce sont des nombres valides
+    const take = isNaN(limit) || limit < 0 ? 100 : Math.floor(limit);
+    const skip = isNaN(offset) || offset < 0 ? 0 : Math.floor(offset);
+
     return this.prisma.lead.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      take: filters?.limit || 100,
-      skip: filters?.offset || 0,
+      take,
+      skip,
       include: {
         target: {
           select: {
@@ -271,6 +324,54 @@ export class LeadsService {
     ].join('\n');
 
     return csv;
+  }
+
+  /**
+   * Mode Autopilot : Valide plusieurs messages en batch
+   */
+  async validateBatch(workspaceId: string, messageIds: string[]) {
+    const results = [];
+
+    for (const messageId of messageIds) {
+      try {
+        const message = await this.prisma.suggestedMessage.findFirst({
+          where: { id: messageId, workspaceId },
+          include: { lead: true },
+        });
+
+        if (!message) {
+          results.push({ id: messageId, success: false, error: 'Message not found' });
+          continue;
+        }
+
+        await this.prisma.suggestedMessage.update({
+          where: { id: messageId },
+          data: {
+            status: 'validated',
+            validatedAt: new Date(),
+          },
+        });
+
+        results.push({
+          id: messageId,
+          success: true,
+          lead: {
+            username: message.lead.username,
+            platform: message.lead.platform,
+            message: message.content,
+            profileUrl: `https://www.${message.lead.platform === 'tiktok' ? 'tiktok.com' : 'instagram.com'}/@${message.lead.username}`,
+          },
+        });
+      } catch (error) {
+        results.push({ id: messageId, success: false, error: error.message });
+      }
+    }
+
+    return {
+      validated: results.filter((r) => r.success).length,
+      total: messageIds.length,
+      results,
+    };
   }
 }
 

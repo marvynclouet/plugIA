@@ -1,0 +1,97 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { api } from '@/lib/api'
+
+export default function TikTokCallbackPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
+  const [message, setMessage] = useState('')
+
+  useEffect(() => {
+    const code = searchParams.get('code')
+    const state = searchParams.get('state') // workspaceId
+    const error = searchParams.get('error')
+    const errorDescription = searchParams.get('error_description')
+
+    if (error) {
+      console.error('❌ TikTok OAuth error:', { error, errorDescription })
+      setStatus('error')
+      setMessage(errorDescription || error || 'Une erreur est survenue lors de la connexion')
+      setTimeout(() => router.push('/dashboard/accounts'), 3000)
+      return
+    }
+
+    if (!code) {
+      setStatus('error')
+      setMessage('Code d\'autorisation manquant')
+      setTimeout(() => router.push('/dashboard/accounts'), 3000)
+      return
+    }
+
+    // Appeler le backend pour traiter le callback
+    const handleCallback = async () => {
+      try {
+        console.log('📥 Processing TikTok callback:', { code, workspaceId: state })
+        const response = await api.get(`/social-accounts/tiktok/callback`, {
+          params: {
+            code,
+            state,
+          },
+        })
+        console.log('✅ TikTok callback successful:', response.data)
+        setStatus('success')
+        setMessage('Compte TikTok connecté avec succès!')
+        
+        // Notifier la page accounts de la connexion
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('tiktok-connected', Date.now().toString());
+          // Déclencher un événement storage pour les autres onglets
+          window.dispatchEvent(new StorageEvent('storage', {
+            key: 'tiktok-connected',
+            newValue: Date.now().toString(),
+          }));
+        }
+        
+        setTimeout(() => router.push('/dashboard/accounts'), 2000)
+      } catch (err: any) {
+        console.error('❌ TikTok callback error:', err)
+        setStatus('error')
+        setMessage(err.response?.data?.message || 'Erreur lors de la connexion du compte')
+        setTimeout(() => router.push('/dashboard/accounts'), 3000)
+      }
+    }
+
+    handleCallback()
+  }, [searchParams, router])
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#0a0f1e] via-[#0f1629] to-[#1a1f35]">
+      <div className="text-center space-y-4">
+        {status === 'loading' && (
+          <>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
+            <p className="text-white/80">Connexion TikTok en cours...</p>
+          </>
+        )}
+        {status === 'success' && (
+          <>
+            <div className="text-green-400 text-4xl mb-4">✅</div>
+            <p className="text-white text-lg">{message}</p>
+            <p className="text-white/60 text-sm">Redirection en cours...</p>
+          </>
+        )}
+        {status === 'error' && (
+          <>
+            <div className="text-red-400 text-4xl mb-4">❌</div>
+            <p className="text-white text-lg">{message}</p>
+            <p className="text-white/60 text-sm">Redirection en cours...</p>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+

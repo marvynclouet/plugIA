@@ -15,19 +15,23 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string) {
+    console.log('🔍 Validating user:', { email });
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
 
     if (!user) {
+      console.log('❌ User not found:', { email });
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      console.log('❌ Invalid password for user:', { email });
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    console.log('✅ User validated:', { userId: user.id, email: user.email });
     const { password: _, ...result } = user;
     return result;
   }
@@ -55,9 +59,13 @@ export class AuthService {
       },
     });
 
-    // Créer un workspace par défaut
+    // Créer un workspace par défaut avec un nom unique
+    const workspaceName = name 
+      ? `${name}'s Workspace` 
+      : `${email.split('@')[0]}'s Workspace`;
+    
     const workspace = await this.workspacesService.create({
-      name: name || `${email}'s Workspace`,
+      name: workspaceName,
       ownerId: user.id,
     });
 

@@ -10,17 +10,23 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(
+    console.log('📝 Register attempt:', { email: registerDto.email, name: registerDto.name });
+    const result = await this.authService.register(
       registerDto.email,
       registerDto.password,
       registerDto.name,
     );
+    console.log('✅ Register successful:', { userId: result.user.id, email: result.user.email });
+    return result;
   }
 
   @Post('login')
   @UseGuards(AuthGuard('local'))
   async login(@Request() req, @Body() loginDto: LoginDto) {
-    return this.authService.login(req.user);
+    console.log('🔐 Login attempt:', { email: loginDto.email });
+    const result = await this.authService.login(req.user);
+    console.log('✅ Login successful:', { userId: req.user.id, email: req.user.email });
+    return result;
   }
 
   @Post('me')

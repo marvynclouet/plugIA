@@ -13,14 +13,40 @@ export class InstagramService {
     this.appId = config.get('META_APP_ID');
     this.appSecret = config.get('META_APP_SECRET');
     this.redirectUri = config.get('META_REDIRECT_URI');
+    
+    if (!this.appId) {
+      console.error('❌ META_APP_ID is not set in environment variables');
+    }
+    if (!this.appSecret) {
+      console.error('❌ META_APP_SECRET is not set in environment variables');
+    }
+    if (!this.redirectUri) {
+      console.error('❌ META_REDIRECT_URI is not set in environment variables');
+    }
+    
+    console.log('✅ InstagramService initialized:', {
+      appId: this.appId ? `${this.appId.substring(0, 10)}...` : 'NOT SET',
+      redirectUri: this.redirectUri,
+    });
   }
 
   getAuthUrl(workspaceId: string): string {
+    if (!this.appId) {
+      throw new Error('META_APP_ID is not configured');
+    }
+    if (!this.redirectUri) {
+      throw new Error('META_REDIRECT_URI is not configured');
+    }
+
+    // Permissions valides pour Instagram Business via Facebook Pages
+    // Instagram Business est géré via Facebook Pages, donc on utilise les permissions Pages
+    // Documentation: https://developers.facebook.com/docs/instagram-api/getting-started
     const scopes = [
-      'instagram_basic',
-      'instagram_manage_messages',
-      'pages_read_engagement',
-      'pages_show_list',
+      'pages_show_list',              // Lister les pages Facebook connectées
+      'pages_read_engagement',        // Lire les interactions (likes, commentaires)
+      'pages_manage_posts',           // Gérer les posts (pour Instagram Business)
+      'pages_messaging',              // Envoyer des messages (si disponible)
+      'public_profile',               // Profil public de base
     ].join(',');
 
     const params = new URLSearchParams({
@@ -31,7 +57,15 @@ export class InstagramService {
       state: workspaceId, // Pour récupérer le workspace après callback
     });
 
-    return `https://www.facebook.com/v18.0/dialog/oauth?${params.toString()}`;
+    const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?${params.toString()}`;
+    console.log('🔗 Generated Instagram auth URL:', {
+      appId: this.appId,
+      redirectUri: this.redirectUri,
+      scopes,
+      url: authUrl.substring(0, 100) + '...',
+    });
+    
+    return authUrl;
   }
 
   async exchangeCode(code: string) {
@@ -85,10 +119,11 @@ export class InstagramService {
           },
         },
       );
-      return response.data.data || [];
+      // Retourner la réponse complète avec pagination si disponible
+      return response.data || { data: [], paging: null };
     } catch (error) {
       console.error('Error fetching media likes:', error);
-      return [];
+      return { data: [], paging: null };
     }
   }
 
@@ -103,10 +138,11 @@ export class InstagramService {
           },
         },
       );
-      return response.data.data || [];
+      // Retourner la réponse complète avec pagination si disponible
+      return response.data || { data: [], paging: null };
     } catch (error) {
       console.error('Error fetching media comments:', error);
-      return [];
+      return { data: [], paging: null };
     }
   }
 

@@ -153,8 +153,10 @@ Les tests ne sont pas encore implémentés. Recommandations :
 Le projet est prêt pour le déploiement sur :
 - **Vercel** (frontend)
 - **Render / Fly.io / Railway** (backend)
-- **Supabase** (PostgreSQL)
+- **Supabase** (PostgreSQL) - **Recommandé et configuré par défaut**
 - **Upstash** (Redis)
+
+**Configuration Supabase** : Voir `backend/SUPABASE_SETUP.md` pour la configuration complète.
 
 Voir les fichiers de configuration dans chaque dossier pour les détails.
 

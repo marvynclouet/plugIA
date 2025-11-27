@@ -1,23 +1,29 @@
-version: '3.8'
+# Docker Compose pour développement local
+# NOTE: En production, utilisez Supabase pour PostgreSQL (recommandé)
+# Voir: https://supabase.com/dashboard
 
 services:
+  # PostgreSQL local (optionnel - Supabase recommandé en production)
   postgres:
     image: postgres:15-alpine
     container_name: vistaflow-postgres
     environment:
-      POSTGRES_USER: vistaflow
-      POSTGRES_PASSWORD: vistaflow_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: vistaflow
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vistaflow"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+    profiles:
+      - local-db  # Utilisez: docker-compose --profile local-db up -d
 
+  # Redis local (ou utilisez Upstash Redis en production)
   redis:
     image: redis:7-alpine
     container_name: vistaflow-redis

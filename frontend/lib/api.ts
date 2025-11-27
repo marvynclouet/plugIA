@@ -22,9 +22,19 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Ne pas rediriger automatiquement pour /auth/me (géré par le layout)
+    // et ne pas rediriger si on est déjà sur /login
     if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      window.location.href = '/login'
+      const isAuthMe = error.config?.url?.includes('/auth/me')
+      const isLoginPage = window.location.pathname === '/login'
+      
+      if (!isAuthMe && !isLoginPage) {
+        console.log('⚠️ 401 Unauthorized, removing token and redirecting')
+        localStorage.removeItem('token')
+        window.location.href = '/login'
+      } else {
+        console.log('⚠️ 401 on /auth/me or already on login page, not redirecting')
+      }
     }
     return Promise.reject(error)
   },

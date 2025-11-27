@@ -3,6 +3,10 @@ import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { InteractionsService } from '../interactions/interactions.service';
 import { TargetsService } from '../targets/targets.service';
+import { LeadAnalysisService } from '../leads/lead-analysis.service';
+import { LeadExtractionService } from '../leads/lead-extraction.service';
+import { TikTokInboxSyncService } from '../social-accounts/providers/tiktok-inbox-sync.service';
+import { TikTokReconnectionService } from '../social-accounts/providers/tiktok-reconnection.service';
 
 @Injectable()
 export class JobsService {
@@ -10,6 +14,10 @@ export class JobsService {
     private prisma: PrismaService,
     private interactionsService: InteractionsService,
     private targetsService: TargetsService,
+    private leadAnalysisService: LeadAnalysisService,
+    private leadExtractionService: LeadExtractionService,
+    private inboxSyncService: TikTokInboxSyncService,
+    private reconnectionService: TikTokReconnectionService,
   ) {}
 
   // Collecter les interactions toutes les 15 minutes
@@ -76,6 +84,49 @@ export class JobsService {
         resetAt,
       },
     });
+  }
+
+  // Analyser les leads toutes les 30 minutes
+  @Cron('0 */30 * * * *')
+  async analyzePendingLeads() {
+    console.log('🤖 Analyzing pending leads...');
+
+    const workspaces = await this.prisma.workspace.findMany();
+
+    for (const workspace of workspaces) {
+      try {
+        await this.leadAnalysisService.analyzePendingLeads(workspace.id);
+      } catch (error) {
+        console.error(
+          `Error analyzing leads for workspace ${workspace.id}:`,
+          error,
+        );
+      }
+    }
+  }
+
+  // Collecter les interactions TikTok toutes les 15 minutes
+  @Cron('0 */15 * * * *')
+  async collectTikTokInteractions() {
+    console.log('🔄 Collecting TikTok interactions...');
+
+    const accounts = await this.prisma.socialAccount.findMany({
+      where: { 
+        isActive: true,
+        platform: 'tiktok',
+      },
+    });
+
+    for (const account of accounts) {
+      try {
+        await this.interactionsService.collectTikTokInteractions(account.id);
+      } catch (error) {
+        console.error(
+          `Error collecting TikTok interactions for account ${account.id}:`,
+          error,
+        );
+      }
+    }
   }
 }
 

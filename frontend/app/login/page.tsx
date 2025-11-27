@@ -34,15 +34,44 @@ export default function LoginPage() {
     setError('')
 
     try {
+      console.log('🚀 Attempting:', isLogin ? 'login' : 'register', { email })
+      
       if (isLogin) {
         await login(email, password)
+        console.log('✅ Login successful')
       } else {
         await register(email, password, name)
+        console.log('✅ Register successful')
       }
-      router.push('/dashboard')
+      
+      // Vérifier immédiatement que le token est stocké
+      const token = localStorage.getItem('token')
+      console.log('💾 Token check:', !!token)
+      
+      if (!token) {
+        throw new Error('Token not stored after login')
+      }
+      
+      console.log('🔄 Redirecting to dashboard...')
+      
+      // Redirection immédiate et forcée
+      window.location.href = '/dashboard'
+      
+      // Si ça ne fonctionne pas, essayer replace
+      setTimeout(() => {
+        if (window.location.pathname !== '/dashboard') {
+          console.log('⚠️ Fallback: using replace')
+          window.location.replace('/dashboard')
+        }
+      }, 100)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Une erreur est survenue')
-    } finally {
+      console.error('❌ Auth error:', err)
+      console.error('❌ Error details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+      })
+      setError(err.response?.data?.message || err.message || 'Une erreur est survenue')
       setLoading(false)
     }
   }

@@ -4,12 +4,13 @@ import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { api } from '@/lib/api'
-import { Download, Filter } from 'lucide-react'
+import { Download, Filter, Sparkles, Edit, Check, X, Send } from 'lucide-react'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 
 const statusLabels: Record<string, string> = {
@@ -31,6 +32,8 @@ const statusClasses: Record<string, string> = {
 export default function LeadsPage() {
   const [workspaceId, setWorkspaceId] = useState('')
   const [filters, setFilters] = useState({ platform: '', status: '', search: '' })
+  const [editingMessage, setEditingMessage] = useState<string | null>(null)
+  const [editedContent, setEditedContent] = useState('')
 
   const { data: workspaces } = useQuery({
     queryKey: ['workspaces'],
@@ -56,11 +59,32 @@ export default function LeadsPage() {
     enabled: !!selectedWorkspaceId,
   })
 
+  const { data: suggestions, refetch: refetchSuggestions } = useQuery({
+    queryKey: ['suggested-messages', selectedWorkspaceId],
+    queryFn: async () => {
+      if (!selectedWorkspaceId) return []
+      const res = await api.get(`/leads/suggested-messages?workspaceId=${selectedWorkspaceId}`)
+      return res.data || []
+    },
+    enabled: !!selectedWorkspaceId,
+  })
+
   const { mutate: updateStatus } = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       await api.put(`/leads/${id}/status?workspaceId=${selectedWorkspaceId}`, { status })
     },
     onSuccess: () => refetch(),
+  })
+
+  const { mutate: validateMessage } = useMutation({
+    mutationFn: async ({ id, action, content }: { id: string; action: 'validate' | 'reject'; content?: string }) => {
+      await api.post(`/leads/suggested-messages/${id}/${action}?workspaceId=${selectedWorkspaceId}`, { content })
+    },
+    onSuccess: () => {
+      refetchSuggestions()
+      setEditingMessage(null)
+      setEditedContent('')
+    },
   })
 
   const { mutate: exportCsv } = useMutation({
@@ -88,6 +112,111 @@ export default function LeadsPage() {
           <Download className="h-4 w-4" /> Exporter CSV
         </Button>
       </div>
+
+      {/* Section Autopilot Suggestions */}
+      {suggestions && suggestions.length > 0 && (
+        <Card className="border-purple-500/30 bg-purple-500/5">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-purple-400" />
+                <CardTitle className="text-white">Suggestions Autopilot IA</CardTitle>
+            </div>
+            <CardDescription className="text-purple-200/70">
+                {suggestions.length} messages prêts à être validés pour engager vos leads chauds.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {suggestions.map((suggestion: any) => (
+                    <div key={suggestion.id} className="rounded-lg border border-purple-500/20 bg-[#050914] p-4 space-y-3">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <p className="font-semibold text-white">@{suggestion.lead.username}</p>
+                                <Badge variant="outline" className="text-[10px] border-white/10 text-white/50 mt-1 capitalize">
+                                    {suggestion.lead.leadType || 'Nouveau Lead'}
+                                </Badge>
+                            </div>
+                            <div className="text-xs text-white/30">
+                                {new Date(suggestion.generatedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </div>
+                        </div>
+                        
+                        <div className="bg-white/5 rounded p-3 text-sm text-white/80 relative group">
+                            {editingMessage === suggestion.id ? (
+                                <Textarea 
+                                    value={editedContent} 
+                                    onChange={(e) => setEditedContent(e.target.value)}
+                                    className="bg-black/50 min-h-[100px] text-xs"
+                                />
+                            ) : (
+                                <>
+                                    <p className="italic">"{suggestion.content}"</p>
+                                    <Button 
+                                        size="icon" 
+                                        variant="ghost" 
+                                        className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => {
+                                            setEditingMessage(suggestion.id)
+                                            setEditedContent(suggestion.content)
+                                        }}
+                                    >
+                                        <Edit className="h-3 w-3" />
+                                    </Button>
+                                </>
+                            )}
+                        </div>
+
+                        <div className="flex gap-2 pt-2">
+                            {editingMessage === suggestion.id ? (
+                                <>
+                                    <Button 
+                                        size="sm" 
+                                        className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+                                        onClick={() => validateMessage({ id: suggestion.id, action: 'validate', content: editedContent })}
+                                    >
+                                        <Check className="h-4 w-4 mr-1" /> Sauvegarder
+                                    </Button>
+                                    <Button 
+                                        size="sm" 
+                                        variant="ghost" 
+                                        onClick={() => setEditingMessage(null)}
+                                    >
+                                        Annuler
+                                    </Button>
+                                </>
+                            ) : (
+                                <>
+                                    <Button 
+                                        size="sm" 
+                                        variant="default"
+                                        className="flex-1 bg-white/10 hover:bg-white/20"
+                                        onClick={() => {
+                                            // Copier dans le presse-papier + Valider
+                                            navigator.clipboard.writeText(suggestion.content)
+                                            validateMessage({ id: suggestion.id, action: 'validate' })
+                                            // Ouvrir TikTok (optionnel)
+                                            window.open(`https://www.tiktok.com/@${suggestion.lead.username}`, '_blank')
+                                        }}
+                                    >
+                                        <Send className="h-3 w-3 mr-2" /> Copier & Ouvrir
+                                    </Button>
+                                    <Button 
+                                        size="sm" 
+                                        variant="ghost" 
+                                        className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                                        onClick={() => validateMessage({ id: suggestion.id, action: 'reject' })}
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {workspaces && workspaces.length > 0 && (
         <div className="grid gap-4 rounded-3xl border border-white/10 bg-white/5 p-6 md:grid-cols-5">

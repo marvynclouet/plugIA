@@ -24,23 +24,39 @@ Plateforme SaaS qui automatise la gestion des interactions sur les réseaux soci
 npm run install:all
 ```
 
-2. **Démarrer les services (PostgreSQL + Redis)**
-```bash
-docker-compose up -d
-```
+2. **Configurer Supabase (recommandé)**
+
+Créez un projet sur [Supabase](https://supabase.com) et récupérez votre connection string :
+- Allez dans Settings → Database
+- Copiez la "Connection string" (URI)
 
 3. **Configurer les variables d'environnement**
 
 Backend (`backend/.env`):
 ```env
-DATABASE_URL="postgresql://vistaflow:vistaflow_dev@localhost:5432/vistaflow"
+# Supabase PostgreSQL (recommandé)
+DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres?sslmode=require"
+SHADOW_DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres?sslmode=require"
+
+# Redis (local ou Upstash)
 REDIS_URL="redis://localhost:6379"
+
+# Autres variables
 JWT_SECRET="your-secret-key"
 META_APP_ID="your-meta-app-id"
 META_APP_SECRET="your-meta-app-secret"
 OPENAI_API_KEY="your-openai-key"
 GOOGLE_CLIENT_ID="your-google-client-id"
 GOOGLE_CLIENT_SECRET="your-google-client-secret"
+```
+
+**Alternative: Base de données locale (Docker)**
+```bash
+docker-compose --profile local-db up -d
+```
+Puis utilisez dans `.env`:
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/vistaflow"
 ```
 
 Frontend (`frontend/.env.local`):

@@ -19,5 +19,14 @@ export class TargetsController {
   ) {
     return this.targetsService.findAll(workspaceId, filters);
   }
+
+  @Get('interested/:workspaceId')
+  async getInterestedUsers(
+    @Param('workspaceId') workspaceId: string,
+    @Query('platform') platform?: string,
+  ) {
+    // Récupérer les utilisateurs intéressés avec leur score d'intérêt
+    return this.targetsService.getInterestedUsers(workspaceId, platform);
+  }
 }
 
