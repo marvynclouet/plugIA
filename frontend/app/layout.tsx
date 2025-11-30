@@ -8,12 +8,18 @@ const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
   display: 'swap',
+  // Précharger seulement la police principale
+  preload: true,
+  adjustFontFallback: true,
 })
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-space-grotesk',
   display: 'swap',
+  // Ne pas précharger si pas utilisé immédiatement (évite les warnings)
+  preload: false,
+  adjustFontFallback: true,
 })
 
 export const metadata: Metadata = {
