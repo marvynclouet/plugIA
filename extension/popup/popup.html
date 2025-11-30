@@ -13,30 +13,15 @@
       <p class="subtitle">Assistant de capture automatique</p>
     </div>
 
-    <div id="login-form" style="display:none;">
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" placeholder="votre@email.com" />
-      </div>
-      <div class="form-group">
-        <label for="password">Mot de passe</label>
-        <input type="password" id="password" placeholder="••••••••" />
-      </div>
-      <button id="login-btn" class="btn btn-primary">Connexion</button>
-      <p class="help-text">
-        Connectez-vous avec vos identifiants PlugIA
-      </p>
-    </div>
-
-    <div id="status" style="display:none;">
+    <div id="status">
       <div class="status-content">
-        <div class="status-icon">✓</div>
-        <p id="status-text">Connecté</p>
-        <button id="logout-btn" class="btn btn-secondary">Déconnexion</button>
+        <div class="status-icon">🔮</div>
+        <p id="status-text">Vérification de la connexion...</p>
       </div>
-      <div class="info-box">
-        <p>💡 L'extension capture automatiquement vos notifications TikTok et Instagram.</p>
-        <p>Allez sur la page Notifications pour activer la capture.</p>
+      <div id="accounts-list" class="mt-4 space-y-2"></div>
+      <div class="info-box mt-4">
+        <p>💡 L'extension détecte automatiquement votre connexion sur Flow.IA.</p>
+        <p>Connectez vos comptes sur le site, puis allez sur TikTok/Instagram notifications.</p>
       </div>
     </div>
   </div>

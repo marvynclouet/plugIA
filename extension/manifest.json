@@ -6,13 +6,17 @@
   "permissions": [
     "activeTab",
     "storage",
-    "notifications"
+    "notifications",
+    "tabs",
+    "scripting"
   ],
   "host_permissions": [
     "https://www.tiktok.com/*",
     "https://www.instagram.com/*",
     "http://localhost:3001/*",
-    "https://*.plugia.com/*"
+    "http://localhost:3000/*",
+    "https://*.plugia.com/*",
+    "https://*.flowia.ai/*"
   ],
   "background": {
     "service_worker": "dist/background.js"

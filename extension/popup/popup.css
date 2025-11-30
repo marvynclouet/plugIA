@@ -142,3 +142,27 @@ body {
   margin-bottom: 0;
 }
 
+#accounts-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+#accounts-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+#accounts-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#accounts-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+#connect-link {
+  display: block;
+  text-align: center;
+  margin-top: 12px;
+}
+
