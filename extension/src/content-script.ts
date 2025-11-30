@@ -181,6 +181,7 @@ async function scrollToBottom(): Promise<void> {
 
 /**
  * Extrait les interactions TikTok depuis le DOM
+ * Analyse le texte visible pour détecter les patterns d'interactions
  */
 function extractTikTokInteractions(): Array<{
   username: string;
@@ -202,59 +203,149 @@ function extractTikTokInteractions(): Array<{
   try {
     console.log('🔍 [Flow IA] Extracting interactions from DOM...');
     
-    // Chercher tous les éléments de notifications
-    // TikTok utilise différentes structures selon le type d'interaction
+    // Obtenir tout le texte visible de la page
+    const bodyText = document.body?.textContent || '';
+    const bodyInnerText = document.body?.innerText || '';
     
-    // Méthode 1 : Chercher les conteneurs de notifications
-    const notificationContainers = document.querySelectorAll('[class*="notification"], [class*="Notification"], [data-e2e*="notification"]');
+    // Diviser le texte en lignes pour analyser chaque notification
+    const lines = bodyText.split('\n').filter(line => line.trim().length > 0);
     
-    // Méthode 2 : Chercher par structure de liste
-    const listItems = document.querySelectorAll('div[class*="item"], div[class*="Item"], li[class*="notification"]');
+    // Patterns pour détecter les interactions TikTok (français et anglais)
+    const patterns = {
+      like: [
+        /^([a-zA-Z0-9_.]+)\s+a\s+aimé\s+(votre\s+vidéo|une\s+vidéo\s+que\s+tu\s+as\s+republiée)/i,
+        /^([a-zA-Z0-9_.]+)\s+liked\s+(your\s+video|a\s+video\s+you\s+reposted)/i,
+        /^([a-zA-Z0-9_.]+)\s+a\s+aimé\s+ta\s+vidéo/i,
+      ],
+      comment: [
+        /^([a-zA-Z0-9_.]+)\s*:\s*(.+)/, // Format: "username: comment text"
+        /^([a-zA-Z0-9_.]+)\s+a\s+commenté/i,
+        /^([a-zA-Z0-9_.]+)\s+commented/i,
+      ],
+      follow: [
+        /^([a-zA-Z0-9_.]+)\s+(vous\s+suit|a\s+commencé\s+à\s+te\s+suivre|started\s+following\s+you)/i,
+        /^([a-zA-Z0-9_.]+)\s+commencé\s+à\s+te\s+suivre/i,
+      ],
+      mention: [
+        /^([a-zA-Z0-9_.]+)\s+(vous\s+a\s+mentionné|t'a\s+mentionné|mentioned\s+you)/i,
+        /^([a-zA-Z0-9_.]+)\s+t'a\s+mentionné/i,
+      ],
+      share: [
+        /^([a-zA-Z0-9_.]+)\s+(a\s+partagé|a\s+reposté|shared|reposted)/i,
+        /^([a-zA-Z0-9_.]+)\s+(a\s+reposté\s+la\s+même\s+vidéo|reposted\s+the\s+same\s+video)/i,
+      ],
+    };
     
-    // Méthode 3 : Chercher par patterns de texte
-    const allDivs = Array.from(document.querySelectorAll('div'));
+    // Extraire les timestamps (ex: "il y a 2h", "2h", "22min", "1 jour")
+    const timePattern = /(il\s+y\s+a\s+)?(\d+)\s*(min|h|jour|day|hour|minute|minutes|hours|days)?/i;
     
-    for (const element of [...Array.from(notificationContainers), ...Array.from(listItems), ...allDivs]) {
+    // Analyser chaque ligne
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (line.length < 3) continue; // Ignorer les lignes trop courtes
+      
+      let matched = false;
+      let interactionType: 'like' | 'comment' | 'follow' | 'share' | 'mention' | null = null;
+      let username = '';
+      let content = '';
+      let timestamp = '';
+      
+      // Chercher le timestamp dans la ligne ou les lignes suivantes
+      const timeMatch = line.match(timePattern);
+      if (timeMatch) {
+        timestamp = timeMatch[0];
+      } else if (i + 1 < lines.length) {
+        const nextLine = lines[i + 1].trim();
+        const nextTimeMatch = nextLine.match(timePattern);
+        if (nextTimeMatch) {
+          timestamp = nextTimeMatch[0];
+        }
+      }
+      
+      // Tester chaque type d'interaction
+      for (const [type, typePatterns] of Object.entries(patterns)) {
+        for (const pattern of typePatterns) {
+          const match = line.match(pattern);
+          if (match) {
+            username = match[1];
+            interactionType = type as any;
+            
+            // Pour les commentaires, extraire le contenu
+            if (type === 'comment' && match[2]) {
+              content = match[2].trim();
+            }
+            
+            matched = true;
+            break;
+          }
+        }
+        if (matched) break;
+      }
+      
+      // Si on a trouvé une interaction
+      if (matched && username && interactionType) {
+        // Chercher le nom d'affichage (peut être dans la ligne précédente ou suivante)
+        let displayName = username;
+        if (i > 0) {
+          const prevLine = lines[i - 1].trim();
+          // Si la ligne précédente ressemble à un nom (pas de pattern d'interaction)
+          if (prevLine && !prevLine.match(/\d+\s*(min|h|jour)/i) && prevLine.length < 50) {
+            displayName = prevLine;
+          }
+        }
+        
+        interactions.push({
+          username,
+          displayName: displayName !== username ? displayName : undefined,
+          type: interactionType,
+          timestamp: timestamp || 'unknown',
+          content: content || undefined,
+        });
+      }
+    }
+    
+    // Méthode alternative : Chercher dans les éléments DOM structurés
+    // TikTok utilise souvent des divs avec des classes spécifiques
+    const notificationElements = document.querySelectorAll('div[class*="notification"], div[class*="item"], div[class*="Item"]');
+    
+    for (const element of Array.from(notificationElements)) {
       const text = element.textContent || '';
-      const innerHTML = element.innerHTML || '';
+      const innerText = element.innerText || '';
       
-      // Détecter les patterns d'interactions
-      
-      // Pattern 1: "username a aimé votre vidéo" ou "username liked your video"
-      if (text.match(/a aimé|liked|aimé votre|liked your/i)) {
-        const usernameMatch = text.match(/([a-zA-Z0-9_.]+)\s+(a aimé|liked)/i);
-        const timeMatch = text.match(/(\d+\s*(min|h|jour|day|hour|minute)s?\s*(ago|il y a)?)/i);
+      // Pattern pour les likes
+      if (text.match(/a\s+aimé|liked/i) && !interactions.some(i => i.type === 'like' && text.includes(i.username))) {
+        const usernameMatch = text.match(/^([a-zA-Z0-9_.]+)/);
+        const timeMatch = text.match(timePattern);
         
         if (usernameMatch) {
           interactions.push({
             username: usernameMatch[1],
             type: 'like',
             timestamp: timeMatch ? timeMatch[0] : 'unknown',
-            content: text.substring(0, 200), // Extraire un extrait
           });
         }
       }
       
-      // Pattern 2: "username a commenté" ou "username commented"
-      if (text.match(/a commenté|commented|commentaire|comment/i)) {
-        const usernameMatch = text.match(/([a-zA-Z0-9_.]+)\s+(a commenté|commented|:)/i);
-        const timeMatch = text.match(/(\d+\s*(min|h|jour|day|hour|minute)s?\s*(ago|il y a)?)/i);
-        const commentMatch = text.match(/["']([^"']{10,200})["']/);
+      // Pattern pour les commentaires
+      if (text.match(/commenté|commented|:/i) && !interactions.some(i => i.type === 'comment' && text.includes(i.username))) {
+        const usernameMatch = text.match(/^([a-zA-Z0-9_.]+)\s*:/);
+        const timeMatch = text.match(timePattern);
+        const commentText = text.split(':').slice(1).join(':').trim();
         
-        if (usernameMatch) {
+        if (usernameMatch && commentText.length > 5) {
           interactions.push({
             username: usernameMatch[1],
             type: 'comment',
             timestamp: timeMatch ? timeMatch[0] : 'unknown',
-            content: commentMatch ? commentMatch[1] : text.substring(0, 200),
+            content: commentText.substring(0, 500),
           });
         }
       }
       
-      // Pattern 3: "username vous suit" ou "username started following"
-      if (text.match(/vous suit|started following|commencé à te suivre|follows you/i)) {
-        const usernameMatch = text.match(/([a-zA-Z0-9_.]+)\s+(vous suit|started following|commencé à te suivre)/i);
-        const timeMatch = text.match(/(\d+\s*(min|h|jour|day|hour|minute)s?\s*(ago|il y a)?)/i);
+      // Pattern pour les follows
+      if (text.match(/vous\s+suit|commencé\s+à\s+te\s+suivre|started\s+following/i) && !interactions.some(i => i.type === 'follow' && text.includes(i.username))) {
+        const usernameMatch = text.match(/^([a-zA-Z0-9_.]+)/);
+        const timeMatch = text.match(timePattern);
         
         if (usernameMatch) {
           interactions.push({
@@ -264,47 +355,20 @@ function extractTikTokInteractions(): Array<{
           });
         }
       }
-      
-      // Pattern 4: "username vous a mentionné" ou "username mentioned you"
-      if (text.match(/vous a mentionné|mentioned you|t'a mentionné/i)) {
-        const usernameMatch = text.match(/([a-zA-Z0-9_.]+)\s+(vous a mentionné|mentioned you|t'a mentionné)/i);
-        const timeMatch = text.match(/(\d+\s*(min|h|jour|day|hour|minute)s?\s*(ago|il y a)?)/i);
-        
-        if (usernameMatch) {
-          interactions.push({
-            username: usernameMatch[1],
-            type: 'mention',
-            timestamp: timeMatch ? timeMatch[0] : 'unknown',
-            content: text.substring(0, 200),
-          });
-        }
-      }
-      
-      // Pattern 5: "username a partagé" ou "username shared"
-      if (text.match(/a partagé|shared|reposted|republié/i)) {
-        const usernameMatch = text.match(/([a-zA-Z0-9_.]+)\s+(a partagé|shared|reposted|republié)/i);
-        const timeMatch = text.match(/(\d+\s*(min|h|jour|day|hour|minute)s?\s*(ago|il y a)?)/i);
-        
-        if (usernameMatch) {
-          interactions.push({
-            username: usernameMatch[1],
-            type: 'share',
-            timestamp: timeMatch ? timeMatch[0] : 'unknown',
-          });
-        }
-      }
     }
     
     // Dédupliquer par username + type + timestamp
     const uniqueInteractions = interactions.filter((interaction, index, self) =>
       index === self.findIndex((i) => 
-        i.username === interaction.username &&
+        i.username.toLowerCase() === interaction.username.toLowerCase() &&
         i.type === interaction.type &&
-        i.timestamp === interaction.timestamp
+        Math.abs(
+          (i.timestamp.match(/\d+/)?.[0] || '0') - (interaction.timestamp.match(/\d+/)?.[0] || '0')
+        ) < 2 // Tolérance de 2 unités de temps
       )
     );
     
-    console.log(`✅ [Flow IA] Extracted ${uniqueInteractions.length} unique interactions from DOM`);
+    console.log(`✅ [Flow IA] Extracted ${uniqueInteractions.length} unique interactions from DOM (from ${interactions.length} total)`);
     return uniqueInteractions;
     
   } catch (error) {
