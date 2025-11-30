@@ -536,39 +536,42 @@ async function capture(): Promise<void> {
       return;
     }
     
-    console.log(`📊 [Flow IA] Extracted ${interactions.length} interactions, sending to API...`);
+    console.log(`📊 [Flow IA] Extracted ${interactions.length} interactions, sending to API via background script...`);
     
-    // 3. Envoyer à l'API
-    const response = await fetch(`${API_URL}/vision/extract-dom`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({
-        platform,
-        url: window.location.href,
-        interactions,
-        extractedAt: new Date().toISOString(),
-      }),
+    // 3. Envoyer à l'API via le background script (pour éviter les bloqueurs de contenu)
+    const apiResponse = await new Promise<any>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          action: 'sendToAPI',
+          endpoint: '/vision/extract-dom',
+          method: 'POST',
+          data: {
+            platform,
+            url: window.location.href,
+            interactions,
+            extractedAt: new Date().toISOString(),
+          },
+          token: authToken,
+        },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else if (response?.error) {
+            reject(new Error(response.error));
+          } else {
+            resolve(response);
+          }
+        },
+      );
     });
 
-    console.log('📡 [Flow IA] API response status:', response.status);
+    console.log('✅ [Flow IA] Extraction result:', apiResponse);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ [Flow IA] API error:', { status: response.status, statusText: response.statusText, error: errorText });
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    console.log('✅ [Flow IA] Extraction result:', data);
-
-    if (data.newInteractions > 0) {
-      console.log(`🎉 [Flow IA] ${data.newInteractions} nouvelles interactions détectées!`);
+    if (apiResponse?.newInteractions > 0) {
+      console.log(`🎉 [Flow IA] ${apiResponse.newInteractions} nouvelles interactions détectées!`);
       chrome.runtime.sendMessage({
         action: 'notify',
-        message: `${data.newInteractions} nouvelles interactions détectées!`,
+        message: `${apiResponse.newInteractions} nouvelles interactions détectées!`,
       });
     } else {
       console.log('ℹ️ [Flow IA] Aucune nouvelle interaction détectée');
