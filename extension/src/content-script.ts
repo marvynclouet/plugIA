@@ -92,43 +92,67 @@ function isOnNotifications(platform: string): boolean {
 
 async function capture(): Promise<void> {
   const platform = detectPlatform();
+  console.log('🔍 [PlugIA] Checking platform...', { platform, url: window.location.href });
+  
   if (!platform) {
+    console.log('❌ [PlugIA] Platform not supported');
     return; // Pas sur une plateforme supportée
   }
 
   // Vérifier si l'utilisateur est connecté
-  if (!isUserLoggedIn(platform)) {
-    console.log(`PlugIA: User not logged in on ${platform}. Skipping capture.`);
+  const isLoggedIn = isUserLoggedIn(platform);
+  console.log('🔍 [PlugIA] Checking login status...', { platform, isLoggedIn, cookies: document.cookie.substring(0, 100) });
+  
+  if (!isLoggedIn) {
+    console.log(`⚠️ [PlugIA] User not logged in on ${platform}. Skipping capture.`);
     return;
   }
 
   // Vérifier si on est sur une page de notifications
-  if (!isOnNotifications(platform)) {
+  const isOnNotif = isOnNotifications(platform);
+  console.log('🔍 [PlugIA] Checking notifications page...', { platform, isOnNotif, pathname: window.location.pathname });
+  
+  if (!isOnNotif) {
+    console.log(`⚠️ [PlugIA] Not on notifications page for ${platform}`);
     return; // Pas sur une page de notifications
   }
 
-  console.log(`📸 PlugIA capturing ${platform} notifications...`);
+  console.log(`📸 [PlugIA] Starting capture for ${platform} notifications...`);
 
   // Demander au background script de capturer
+  console.log('📸 [PlugIA] Requesting screenshot from background...');
   const screenshot = await new Promise<string>((resolve) => {
     chrome.runtime.sendMessage({ action: 'capture' }, (response) => {
+      console.log('📸 [PlugIA] Screenshot response:', { hasScreenshot: !!response?.screenshot, length: response?.screenshot?.length });
       resolve(response?.screenshot || '');
     });
   });
 
   if (!screenshot) {
-    console.warn('⚠️ No screenshot captured');
+    console.error('❌ [PlugIA] No screenshot captured');
     return;
   }
 
+  console.log('✅ [PlugIA] Screenshot captured, length:', screenshot.length);
+
   // Récupérer le token d'authentification
   const { authToken } = await chrome.storage.sync.get(['authToken']);
+  console.log('🔑 [PlugIA] Auth token check:', { hasToken: !!authToken, tokenLength: authToken?.length });
+  
   if (!authToken) {
-    console.warn('⚠️ No auth token found. Please login in the extension popup.');
+    console.error('❌ [PlugIA] No auth token found. Please login in the extension popup.');
+    // Afficher une notification visuelle
+    const notification = document.createElement('div');
+    notification.style.cssText = 'position:fixed;top:20px;right:20px;background:#f87171;color:white;padding:12px 18px;border-radius:8px;z-index:999999;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
+    notification.textContent = '⚠️ PlugIA: Veuillez vous connecter dans le popup de l\'extension';
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 5000);
     return;
   }
 
   try {
+    console.log('📡 [PlugIA] Sending screenshot to API...', { apiUrl: API_URL, platform, url: window.location.href });
+    
     const response = await fetch(`${API_URL}/vision/analyze`, {
       method: 'POST',
       headers: {
@@ -142,22 +166,30 @@ async function capture(): Promise<void> {
       }),
     });
 
+    console.log('📡 [PlugIA] API response status:', response.status);
+
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ [PlugIA] API error:', { status: response.status, statusText: response.statusText, error: errorText });
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
     const data = await response.json();
-    console.log('✅ PlugIA analysis result:', data);
+    console.log('✅ [PlugIA] Analysis result:', data);
 
     if (data.newInteractions > 0) {
+      console.log(`🎉 [PlugIA] ${data.newInteractions} nouvelles interactions détectées!`);
       // Notifier l'utilisateur
       chrome.runtime.sendMessage({
         action: 'notify',
         message: `${data.newInteractions} nouvelles interactions détectées!`,
       });
+    } else {
+      console.log('ℹ️ [PlugIA] Aucune nouvelle interaction détectée');
     }
   } catch (err: any) {
-    console.error('❌ PlugIA capture error:', err.message);
+    console.error('❌ [PlugIA] Capture error:', err);
+    console.error('❌ [PlugIA] Error details:', { message: err.message, stack: err.stack });
   }
 }
 
@@ -198,12 +230,25 @@ function stop(): void {
 // Fonction pour vérifier et démarrer/arrêter selon les conditions
 function checkAndUpdate(): void {
   const platform = detectPlatform();
-  if (platform && isUserLoggedIn(platform) && isOnNotifications(platform)) {
+  const isLoggedIn = platform ? isUserLoggedIn(platform) : false;
+  const isOnNotif = platform ? isOnNotifications(platform) : false;
+  
+  console.log('🔄 [PlugIA] checkAndUpdate:', { 
+    platform, 
+    isLoggedIn, 
+    isOnNotif, 
+    active, 
+    url: window.location.href 
+  });
+  
+  if (platform && isLoggedIn && isOnNotif) {
     if (!active) {
+      console.log('✅ [PlugIA] Conditions met, starting...');
       start();
     }
   } else {
     if (active) {
+      console.log('⏹️ [PlugIA] Conditions not met, stopping...');
       stop();
     }
   }
