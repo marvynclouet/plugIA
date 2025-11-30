@@ -93,7 +93,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     chrome.notifications.create({
       type: 'basic',
       iconUrl: 'icons/icon128.png',
-      title: 'PlugIA',
+      title: 'Flow IA',
       message: msg.message || 'Nouvelles interactions détectées!',
     });
   }
@@ -104,6 +104,43 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       text: msg.count > 0 ? String(msg.count) : '',
     });
     chrome.action.setBadgeBackgroundColor({ color: '#667eea' });
+  }
+
+  if (msg.action === 'sendToAPI') {
+    // Faire la requête API depuis le background script (non bloqué par les bloqueurs de contenu)
+    const API_URL = 'http://localhost:3001'; // TODO: Changer en production
+    console.log('📡 [Background] Sending request to API:', msg.endpoint);
+    
+    (async () => {
+      try {
+        const response = await fetch(`${API_URL}${msg.endpoint}`, {
+          method: msg.method || 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${msg.token}`,
+          },
+          body: JSON.stringify(msg.data),
+        });
+
+        console.log('📡 [Background] API response status:', response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ [Background] API error:', { status: response.status, error: errorText });
+          sendResponse({ error: `HTTP ${response.status}: ${errorText}` });
+          return;
+        }
+
+        const data = await response.json();
+        console.log('✅ [Background] API response:', data);
+        sendResponse(data);
+      } catch (err: any) {
+        console.error('❌ [Background] Fetch error:', err);
+        sendResponse({ error: err.message || 'Failed to fetch' });
+      }
+    })();
+    
+    return true; // Indique qu'on répondra de manière asynchrone
   }
 });
 
