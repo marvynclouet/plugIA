@@ -124,16 +124,87 @@ async function showLoggedIn(user: any, token: string): Promise<void> {
 // L'extension détecte automatiquement les sessions actives
 
 function showLoggedOut(): void {
-  loginForm.style.display = 'none';
-  statusDiv.style.display = 'block';
+  loginForm.style.display = 'block';
+  statusDiv.style.display = 'none';
   
-  if (statusText) {
-    statusText.innerHTML = `
-      <p class="text-sm text-gray-300 mb-3">Connectez-vous sur le site Flow.IA pour utiliser l'extension.</p>
-      <a href="${SITE_URL}/login" target="_blank" class="block w-full bg-blue-500 hover:bg-blue-600 text-white text-center py-2 px-4 rounded">
-        Aller sur Flow.IA
-      </a>
+  // Afficher le formulaire de connexion
+  if (loginForm) {
+    loginForm.innerHTML = `
+      <div style="padding: 16px;">
+        <h3 style="font-size: 16px; font-weight: 600; color: #333; margin-bottom: 12px;">Connexion à PlugIA</h3>
+        <p style="font-size: 12px; color: #666; margin-bottom: 16px;">
+          Connectez-vous avec vos identifiants PlugIA pour activer la capture automatique.
+        </p>
+        <input 
+          type="email" 
+          id="email" 
+          placeholder="Email" 
+          style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;"
+        />
+        <input 
+          type="password" 
+          id="password" 
+          placeholder="Mot de passe" 
+          style="width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;"
+        />
+        <button 
+          id="login-btn" 
+          style="width: 100%; padding: 10px; background: #667eea; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;"
+        >
+          Se connecter
+        </button>
+        <p style="font-size: 11px; color: #999; margin-top: 12px; text-align: center;">
+          Ou <a href="${SITE_URL}/login" target="_blank" style="color: #667eea; text-decoration: underline;">connectez-vous sur le site</a>
+        </p>
+      </div>
     `;
+    
+    // Réattacher les event listeners
+    const emailInput = document.getElementById('email') as HTMLInputElement;
+    const passwordInput = document.getElementById('password') as HTMLInputElement;
+    const loginBtn = document.getElementById('login-btn') as HTMLButtonElement;
+    
+    loginBtn?.addEventListener('click', async () => {
+      const email = emailInput?.value;
+      const password = passwordInput?.value;
+
+      if (!email || !password) {
+        alert('Veuillez remplir tous les champs');
+        return;
+      }
+
+      try {
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Connexion...';
+        
+        const response = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Erreur de connexion');
+        }
+
+        const data = await response.json();
+        
+        // Sauvegarder le token
+        await chrome.storage.sync.set({ authToken: data.access_token || data.accessToken });
+        
+        // Vérifier le token
+        await checkAuthStatus();
+        
+        alert('✅ Connecté avec succès !');
+      } catch (err: any) {
+        alert(`Erreur: ${err.message}`);
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Se connecter';
+      }
+    });
   }
   
   if (accountsList) {

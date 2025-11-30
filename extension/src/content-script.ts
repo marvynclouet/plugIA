@@ -182,12 +182,76 @@ async function capture(): Promise<void> {
   
   if (!authToken) {
     console.error('❌ [PlugIA] No auth token found. Please login in the extension popup.');
-    // Afficher une notification visuelle
+    // Afficher une notification visuelle plus visible
     const notification = document.createElement('div');
-    notification.style.cssText = 'position:fixed;top:20px;right:20px;background:#f87171;color:white;padding:12px 18px;border-radius:8px;z-index:999999;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
-    notification.textContent = '⚠️ PlugIA: Veuillez vous connecter dans le popup de l\'extension';
+    notification.id = 'plugia-auth-warning';
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 12px;
+      z-index: 999999;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 8px 24px rgba(248, 113, 113, 0.4);
+      max-width: 350px;
+      animation: slideIn 0.3s ease-out;
+    `;
+    notification.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="font-size: 24px;">🔐</div>
+        <div>
+          <div style="font-weight: 700; margin-bottom: 4px;">Connexion requise</div>
+          <div style="font-size: 12px; opacity: 0.9; font-weight: 400;">
+            Cliquez sur l'icône PlugIA dans la barre d'outils Chrome pour vous connecter
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Ajouter animation CSS
+    if (!document.getElementById('plugia-notification-style')) {
+      const style = document.createElement('style');
+      style.id = 'plugia-notification-style';
+      style.textContent = `
+        @keyframes slideIn {
+          from {
+            transform: translateX(400px);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
     document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 5000);
+    
+    // Ne pas supprimer automatiquement - laisser l'utilisateur la fermer
+    // Mais supprimer si l'utilisateur se connecte
+    const checkToken = setInterval(() => {
+      chrome.storage.sync.get(['authToken'], (result) => {
+        if (result.authToken) {
+          notification.remove();
+          clearInterval(checkToken);
+        }
+      });
+    }, 2000);
+    
+    // Supprimer après 30 secondes si toujours pas de token
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.remove();
+      }
+      clearInterval(checkToken);
+    }, 30000);
+    
     return;
   }
 
