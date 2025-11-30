@@ -177,7 +177,30 @@ async function capture(): Promise<void> {
   console.log('✅ [PlugIA] Screenshot captured, length:', screenshot.length);
 
   // Récupérer le token d'authentification
-  const { authToken } = await chrome.storage.sync.get(['authToken']);
+  // D'abord essayer depuis le storage de l'extension
+  let { authToken } = await chrome.storage.sync.get(['authToken']);
+  
+  // Si pas trouvé, essayer de récupérer depuis le site Flow.IA
+  if (!authToken) {
+    console.log('🔍 [PlugIA] No token in extension storage, trying to get from site...');
+    try {
+      // Demander au background de récupérer le token depuis le site
+      const tokenFromSite = await new Promise<string | null>((resolve) => {
+        chrome.runtime.sendMessage({ action: 'getTokenFromSite' }, (response) => {
+          resolve(response?.token || null);
+        });
+      });
+      
+      if (tokenFromSite) {
+        console.log('✅ [PlugIA] Token found on site, saving...');
+        authToken = tokenFromSite;
+        await chrome.storage.sync.set({ authToken: tokenFromSite });
+      }
+    } catch (err) {
+      console.error('❌ [PlugIA] Error getting token from site:', err);
+    }
+  }
+  
   console.log('🔑 [PlugIA] Auth token check:', { hasToken: !!authToken, tokenLength: authToken?.length });
   
   if (!authToken) {

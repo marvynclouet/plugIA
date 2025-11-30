@@ -14,33 +14,50 @@ const accountsList = document.getElementById('accounts-list') as HTMLElement;
 // Récupérer le token depuis le site Flow.IA
 async function getTokenFromSite(): Promise<string | null> {
   try {
+    console.log('🔍 [Popup] Checking for token on Flow.IA site...', { siteUrl: SITE_URL });
+    
     // Essayer de récupérer le token depuis le localStorage du site Flow.IA
     // On cherche tous les onglets qui pointent vers le site
     const siteUrlPattern = SITE_URL.replace('http://', '').replace('https://', '').split('/')[0];
+    console.log('🔍 [Popup] Searching tabs for:', siteUrlPattern);
+    
     const tabs = await chrome.tabs.query({ url: `*://${siteUrlPattern}/*` });
+    console.log('🔍 [Popup] Found tabs:', tabs.length);
     
     for (const tab of tabs) {
       if (tab.id) {
         try {
+          console.log('🔍 [Popup] Checking tab:', tab.id, tab.url);
+          
           // Injecter un script pour récupérer le token
           const results = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
             func: () => {
-              return localStorage.getItem('token');
+              // Essayer plusieurs clés possibles
+              return localStorage.getItem('token') || 
+                     localStorage.getItem('authToken') ||
+                     localStorage.getItem('access_token') ||
+                     localStorage.getItem('accessToken');
             },
           });
           
+          console.log('🔍 [Popup] Token result from tab:', { hasResult: !!results?.[0]?.result, tokenLength: results?.[0]?.result?.length });
+          
           if (results && results[0]?.result) {
+            console.log('✅ [Popup] Token found on site!');
             return results[0].result;
           }
-        } catch (err) {
-          // Tab might not be accessible, continue
+        } catch (err: any) {
+          console.log('⚠️ [Popup] Could not access tab:', err.message);
+          // Tab might not be accessible (chrome://, about:, etc.), continue
           continue;
         }
       }
     }
-  } catch (err) {
-    console.log('Could not get token from site:', err);
+    
+    console.log('❌ [Popup] No token found on any tab');
+  } catch (err: any) {
+    console.error('❌ [Popup] Error getting token from site:', err);
   }
   
   return null;
@@ -48,14 +65,19 @@ async function getTokenFromSite(): Promise<string | null> {
 
 // Vérifier l'état de connexion au chargement
 async function checkAuthStatus(): Promise<void> {
+  console.log('🔍 [Popup] Checking auth status...');
+  
   // D'abord, essayer de récupérer le token depuis le site
   let token = await getTokenFromSite();
   
   // Si pas trouvé, vérifier dans le storage de l'extension
   if (!token) {
+    console.log('🔍 [Popup] No token from site, checking extension storage...');
     const { authToken } = await chrome.storage.sync.get(['authToken']);
     token = authToken;
+    console.log('🔍 [Popup] Token from extension storage:', { hasToken: !!token });
   } else {
+    console.log('✅ [Popup] Token found on site, saving to extension storage...');
     // Sauvegarder le token dans l'extension
     await chrome.storage.sync.set({ authToken: token });
   }
