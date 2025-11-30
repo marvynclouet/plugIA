@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlugIA Assistant</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔮 PlugIA</h1>
+      <p class="subtitle">Assistant de capture automatique</p>
+    </div>
+
+    <div id="login-form" style="display:none;">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="votre@email.com" />
+      </div>
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <input type="password" id="password" placeholder="••••••••" />
+      </div>
+      <button id="login-btn" class="btn btn-primary">Connexion</button>
+      <p class="help-text">
+        Connectez-vous avec vos identifiants PlugIA
+      </p>
+    </div>
+
+    <div id="status" style="display:none;">
+      <div class="status-content">
+        <div class="status-icon">✓</div>
+        <p id="status-text">Connecté</p>
+        <button id="logout-btn" class="btn btn-secondary">Déconnexion</button>
+      </div>
+      <div class="info-box">
+        <p>💡 L'extension capture automatiquement vos notifications TikTok et Instagram.</p>
+        <p>Allez sur la page Notifications pour activer la capture.</p>
+      </div>
+    </div>
+  </div>
+  <script src="../dist/popup.js"></script>
+</body>
+</html>
+

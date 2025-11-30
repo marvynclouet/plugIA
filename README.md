@@ -34,6 +34,7 @@
 
 - 🤖 **Automatisation complète** : Scraping, analyse, et engagement automatisés
 - 🧠 **Intelligence Artificielle** : Classification de leads, scoring, et génération de messages personnalisés
+- 👁️ **Vision AI** : Extension Chrome avec Claude Vision pour capture automatique des notifications
 - 🔄 **Reconnexion automatique** : Gestion intelligente des sessions expirées
 - 🛡️ **Comportement humain** : Délais aléatoires, mouvements de souris, frappe caractère par caractère
 - 📊 **Multi-plateformes** : TikTok, Instagram (Meta), et extensible à d'autres
@@ -181,6 +182,16 @@ VistaFlow/
 │       ├── api.ts                   # Client API
 │       └── auth.ts                  # Utilitaires auth
 │
+├── extension/                       # Extension Chrome
+│   ├── manifest.json                # Configuration extension
+│   ├── src/                         # Code source TypeScript
+│   │   ├── content-script.ts       # Script injecté dans les pages
+│   │   ├── background.ts            # Service worker
+│   │   └── popup.ts                 # Script popup
+│   ├── popup/                       # Interface popup
+│   │   ├── popup.html
+│   │   └── popup.css
+│   └── icons/                       # Icônes extension
 ├── docker-compose.yml               # Configuration Docker
 └── vercel.json                      # Configuration Vercel
 ```
@@ -274,10 +285,18 @@ VistaFlow/
 - Export CSV
 - Intégration Google Sheets
 
-### 8. 🔗 Intégrations
+### 8. 👁️ Extension Chrome (Vision AI)
+
+- **Capture automatique** : Screenshots des notifications toutes les 30 secondes
+- **Analyse Claude Vision** : Extraction automatique des interactions via IA
+- **Détection intelligente** : Likes, commentaires, follows, mentions
+- **Intégration backend** : Envoi automatique au backend pour traitement
+- **Interface simple** : Popup de connexion et badge visuel
+
+### 9. 🔗 Intégrations
 
 - **Instagram** : Via Meta Graph API
-- **TikTok** : Via Playwright (scraping)
+- **TikTok** : Via Playwright (scraping) + Extension Chrome
 - **Extensible** : Architecture modulaire pour ajouter d'autres plateformes
 
 ---
@@ -338,6 +357,9 @@ JWT_EXPIRES_IN="7d"
 
 # OpenAI (pour l'IA)
 OPENAI_API_KEY="sk-..."
+
+# Anthropic Claude (pour Vision AI)
+ANTHROPIC_API_KEY="sk-ant-api03-..."
 
 # Meta (Instagram/Facebook)
 META_APP_ID="your-meta-app-id"
@@ -409,6 +431,39 @@ Les screenshots seront sauvegardés dans `backend/sessions/debug/`.
 
 ---
 
+## 👁️ Extension Chrome
+
+### Installation
+
+1. **Build l'extension** :
+```bash
+cd extension
+npm install
+npm run build
+```
+
+2. **Charger dans Chrome** :
+   - Ouvrez `chrome://extensions/`
+   - Activez le **Mode développeur**
+   - Cliquez sur **Charger l'extension non empaquetée**
+   - Sélectionnez le dossier `extension/`
+
+3. **Configuration** :
+   - Cliquez sur l'icône de l'extension
+   - Connectez-vous avec vos identifiants PlugIA
+   - Allez sur la page **Notifications** de TikTok ou Instagram
+   - L'extension capture automatiquement toutes les 30 secondes
+
+### Fonctionnalités
+
+- ✅ Capture automatique des screenshots
+- ✅ Analyse avec Claude Vision AI
+- ✅ Détection des interactions (likes, comments, follows)
+- ✅ Envoi automatique au backend
+- ✅ Badge visuel et notifications
+
+📖 **Documentation complète** : Voir `extension/README.md`
+
 ## 📦 Services & Modules
 
 ### Backend Services
@@ -462,6 +517,12 @@ Extraction d'informations :
 - Regex pour téléphone/email
 - Détection d'intentions
 - Mise à jour des leads
+
+#### `VisionService`
+Analyse de screenshots avec Claude Vision :
+- Extraction d'interactions depuis images
+- Classification automatique
+- Intégration avec le système d'interactions
 
 ### Frontend Components
 
@@ -587,6 +648,13 @@ POST   /dm/send                   # Envoyer un DM
 GET    /dm/status/:id             # Statut d'un DM
 ```
 
+### Vision AI
+
+```
+POST   /vision/analyze            # Analyser un screenshot (Extension Chrome)
+GET    /vision/health             # Vérifier l'état du service Vision
+```
+
 ---
 
 ## 🚢 Déploiement
@@ -608,7 +676,8 @@ GET    /dm/status/:id             # Statut d'un DM
 Assurez-vous de configurer :
 - `DATABASE_URL` (Supabase recommandé)
 - `JWT_SECRET` (généré aléatoirement)
-- `OPENAI_API_KEY`
+- `OPENAI_API_KEY` (pour l'analyse de leads)
+- `ANTHROPIC_API_KEY` (pour Vision AI - Extension Chrome)
 - `REDIS_URL` (si utilisé)
 
 ---

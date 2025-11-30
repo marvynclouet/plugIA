@@ -13,6 +13,7 @@ import { DmModule } from './dm/dm.module';
 import { LeadsModule } from './leads/leads.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { JobsModule } from './jobs/jobs.module';
+import { VisionModule } from './vision/vision.module';
 
 const logger = new Logger('AppModule');
 
@@ -79,6 +80,7 @@ const redisConfig = redisEnabled
     LeadsModule,
     IntegrationsModule,
     JobsModule,
+    VisionModule,
   ],
 })
 export class AppModule {

@@ -1,0 +1,15 @@
+{
+  "name": "plugia-extension",
+  "version": "1.0.0",
+  "description": "Extension Chrome pour PlugIA - Capture automatique des interactions",
+  "scripts": {
+    "build": "esbuild src/content-script.ts src/background.ts src/popup.ts --bundle --outdir=dist --platform=browser --target=es2020",
+    "watch": "esbuild src/content-script.ts src/background.ts src/popup.ts --bundle --outdir=dist --platform=browser --target=es2020 --watch"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.254",
+    "esbuild": "^0.19.0",
+    "typescript": "^5.0.0"
+  }
+}
+
