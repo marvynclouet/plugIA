@@ -133,48 +133,48 @@ function isOnNotifications(platform: string): boolean {
 
 async function capture(): Promise<void> {
   const platform = detectPlatform();
-  console.log('🔍 [PlugIA] Checking platform...', { platform, url: window.location.href });
+  console.log('🔍 [Flow IA] Checking platform...', { platform, url: window.location.href });
   
   if (!platform) {
-    console.log('❌ [PlugIA] Platform not supported');
+    console.log('❌ [Flow IA] Platform not supported');
     return; // Pas sur une plateforme supportée
   }
 
   // Vérifier si l'utilisateur est connecté
   const isLoggedIn = isUserLoggedIn(platform);
-  console.log('🔍 [PlugIA] Checking login status...', { platform, isLoggedIn, cookies: document.cookie.substring(0, 100) });
+  console.log('🔍 [Flow IA] Checking login status...', { platform, isLoggedIn, cookies: document.cookie.substring(0, 100) });
   
   if (!isLoggedIn) {
-    console.log(`⚠️ [PlugIA] User not logged in on ${platform}. Skipping capture.`);
+    console.log(`⚠️ [Flow IA] User not logged in on ${platform}. Skipping capture.`);
     return;
   }
 
   // Vérifier si on est sur une page de notifications
   const isOnNotif = isOnNotifications(platform);
-  console.log('🔍 [PlugIA] Checking notifications page...', { platform, isOnNotif, pathname: window.location.pathname });
+  console.log('🔍 [Flow IA] Checking notifications page...', { platform, isOnNotif, pathname: window.location.pathname });
   
   if (!isOnNotif) {
-    console.log(`⚠️ [PlugIA] Not on notifications page for ${platform}`);
+    console.log(`⚠️ [Flow IA] Not on notifications page for ${platform}`);
     return; // Pas sur une page de notifications
   }
 
-  console.log(`📸 [PlugIA] Starting capture for ${platform} notifications...`);
+  console.log(`📸 [Flow IA] Starting capture for ${platform} notifications...`);
 
   // Demander au background script de capturer
-  console.log('📸 [PlugIA] Requesting screenshot from background...');
+  console.log('📸 [Flow IA] Requesting screenshot from background...');
   const screenshot = await new Promise<string>((resolve) => {
     chrome.runtime.sendMessage({ action: 'capture' }, (response) => {
-      console.log('📸 [PlugIA] Screenshot response:', { hasScreenshot: !!response?.screenshot, length: response?.screenshot?.length });
+      console.log('📸 [Flow IA] Screenshot response:', { hasScreenshot: !!response?.screenshot, length: response?.screenshot?.length });
       resolve(response?.screenshot || '');
     });
   });
 
   if (!screenshot) {
-    console.error('❌ [PlugIA] No screenshot captured');
+    console.error('❌ [Flow IA] No screenshot captured');
     return;
   }
 
-  console.log('✅ [PlugIA] Screenshot captured, length:', screenshot.length);
+  console.log('✅ [Flow IA] Screenshot captured, length:', screenshot.length);
 
   // Récupérer le token d'authentification
   // D'abord essayer depuis le storage de l'extension
@@ -182,9 +182,36 @@ async function capture(): Promise<void> {
   
   // Si pas trouvé, essayer de récupérer depuis le site Flow.IA
   if (!authToken) {
-    console.log('🔍 [PlugIA] No token in extension storage, trying to get from site...');
+    console.log('🔍 [Flow IA] No token in extension storage, trying to get from site...');
     try {
       // Demander au background de récupérer le token depuis le site
+      const tokenFromSite = await new Promise<string | null>((resolve) => {
+        chrome.runtime.sendMessage({ action: 'getTokenFromSite' }, (response) => {
+          console.log('🔍 [Flow IA] Response from background:', { hasToken: !!response?.token });
+          resolve(response?.token || null);
+        });
+      });
+      
+      if (tokenFromSite) {
+        console.log('✅ [Flow IA] Token found on site, saving to extension storage...');
+        authToken = tokenFromSite;
+        await chrome.storage.sync.set({ authToken: tokenFromSite });
+        console.log('✅ [Flow IA] Token saved successfully!');
+      } else {
+        console.log('❌ [Flow IA] No token found on site either');
+      }
+    } catch (err) {
+      console.error('❌ [Flow IA] Error getting token from site:', err);
+    }
+  }
+  
+  console.log('🔑 [Flow IA] Auth token check:', { hasToken: !!authToken, tokenLength: authToken?.length });
+  
+  if (!authToken) {
+    console.error('❌ [Flow IA] No auth token found. Trying to get from site one more time...');
+    
+    // Essayer une dernière fois de récupérer depuis le site
+    try {
       const tokenFromSite = await new Promise<string | null>((resolve) => {
         chrome.runtime.sendMessage({ action: 'getTokenFromSite' }, (response) => {
           resolve(response?.token || null);
@@ -192,53 +219,44 @@ async function capture(): Promise<void> {
       });
       
       if (tokenFromSite) {
-        console.log('✅ [PlugIA] Token found on site, saving...');
+        console.log('✅ [Flow IA] Token found on site at last attempt!');
         authToken = tokenFromSite;
         await chrome.storage.sync.set({ authToken: tokenFromSite });
-      }
-    } catch (err) {
-      console.error('❌ [PlugIA] Error getting token from site:', err);
-    }
-  }
-  
-  console.log('🔑 [PlugIA] Auth token check:', { hasToken: !!authToken, tokenLength: authToken?.length });
-  
-  if (!authToken) {
-    console.error('❌ [PlugIA] No auth token found. Please login in the extension popup.');
-    // Afficher une notification visuelle plus visible
-    const notification = document.createElement('div');
-    notification.id = 'plugia-auth-warning';
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
-      color: white;
-      padding: 16px 24px;
-      border-radius: 12px;
-      z-index: 999999;
-      font-size: 14px;
-      font-weight: 600;
-      box-shadow: 0 8px 24px rgba(248, 113, 113, 0.4);
-      max-width: 350px;
-      animation: slideIn 0.3s ease-out;
-    `;
-    notification.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <div style="font-size: 24px;">🔐</div>
-        <div>
-          <div style="font-weight: 700; margin-bottom: 4px;">Connexion requise</div>
-          <div style="font-size: 12px; opacity: 0.9; font-weight: 400;">
-            Cliquez sur l'icône PlugIA dans la barre d'outils Chrome pour vous connecter
+      } else {
+        // Afficher une notification visuelle plus visible
+        const notification = document.createElement('div');
+        notification.id = 'flowia-auth-warning';
+        notification.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+          color: white;
+          padding: 16px 24px;
+          border-radius: 12px;
+          z-index: 999999;
+          font-size: 14px;
+          font-weight: 600;
+          box-shadow: 0 8px 24px rgba(248, 113, 113, 0.4);
+          max-width: 350px;
+          animation: slideIn 0.3s ease-out;
+        `;
+        notification.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="font-size: 24px;">🔐</div>
+            <div>
+              <div style="font-weight: 700; margin-bottom: 4px;">Connexion requise</div>
+              <div style="font-size: 12px; opacity: 0.9; font-weight: 400;">
+                Cliquez sur l'icône Flow IA dans la barre d'outils Chrome pour vous connecter
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    `;
+        `;
     
     // Ajouter animation CSS
-    if (!document.getElementById('plugia-notification-style')) {
+    if (!document.getElementById('flowia-notification-style')) {
       const style = document.createElement('style');
-      style.id = 'plugia-notification-style';
+      style.id = 'flowia-notification-style';
       style.textContent = `
         @keyframes slideIn {
           from {
@@ -254,32 +272,36 @@ async function capture(): Promise<void> {
       document.head.appendChild(style);
     }
     
-    document.body.appendChild(notification);
-    
-    // Ne pas supprimer automatiquement - laisser l'utilisateur la fermer
-    // Mais supprimer si l'utilisateur se connecte
-    const checkToken = setInterval(() => {
-      chrome.storage.sync.get(['authToken'], (result) => {
-        if (result.authToken) {
-          notification.remove();
+        document.body.appendChild(notification);
+        
+        // Ne pas supprimer automatiquement - laisser l'utilisateur la fermer
+        // Mais supprimer si l'utilisateur se connecte
+        const checkToken = setInterval(() => {
+          chrome.storage.sync.get(['authToken'], (result) => {
+            if (result.authToken) {
+              notification.remove();
+              clearInterval(checkToken);
+            }
+          });
+        }, 2000);
+        
+        // Supprimer après 30 secondes si toujours pas de token
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.remove();
+          }
           clearInterval(checkToken);
-        }
-      });
-    }, 2000);
-    
-    // Supprimer après 30 secondes si toujours pas de token
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.remove();
+        }, 30000);
       }
-      clearInterval(checkToken);
-    }, 30000);
+    }
     
-    return;
+    if (!authToken) {
+      return; // Pas de token, on ne peut pas continuer
+    }
   }
 
   try {
-    console.log('📡 [PlugIA] Sending screenshot to API...', { apiUrl: API_URL, platform, url: window.location.href });
+    console.log('📡 [Flow IA] Sending screenshot to API...', { apiUrl: API_URL, platform, url: window.location.href });
     
     const response = await fetch(`${API_URL}/vision/analyze`, {
       method: 'POST',
@@ -294,37 +316,37 @@ async function capture(): Promise<void> {
       }),
     });
 
-    console.log('📡 [PlugIA] API response status:', response.status);
+    console.log('📡 [Flow IA] API response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ [PlugIA] API error:', { status: response.status, statusText: response.statusText, error: errorText });
+      console.error('❌ [Flow IA] API error:', { status: response.status, statusText: response.statusText, error: errorText });
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
     const data = await response.json();
-    console.log('✅ [PlugIA] Analysis result:', data);
+    console.log('✅ [Flow IA] Analysis result:', data);
 
     if (data.newInteractions > 0) {
-      console.log(`🎉 [PlugIA] ${data.newInteractions} nouvelles interactions détectées!`);
+      console.log(`🎉 [Flow IA] ${data.newInteractions} nouvelles interactions détectées!`);
       // Notifier l'utilisateur
       chrome.runtime.sendMessage({
         action: 'notify',
         message: `${data.newInteractions} nouvelles interactions détectées!`,
       });
     } else {
-      console.log('ℹ️ [PlugIA] Aucune nouvelle interaction détectée');
+      console.log('ℹ️ [Flow IA] Aucune nouvelle interaction détectée');
     }
   } catch (err: any) {
-    console.error('❌ [PlugIA] Capture error:', err);
-    console.error('❌ [PlugIA] Error details:', { message: err.message, stack: err.stack });
+    console.error('❌ [Flow IA] Capture error:', err);
+    console.error('❌ [Flow IA] Error details:', { message: err.message, stack: err.stack });
   }
 }
 
 function start(): void {
   if (active) return;
   active = true;
-  console.log('🚀 PlugIA started');
+  console.log('🚀 [Flow IA] Started');
   
   // Capture immédiate
   capture();
@@ -334,10 +356,10 @@ function start(): void {
 
   // Afficher le badge visuel
   const badge = document.createElement('div');
-  badge.id = 'plugia-badge';
+  badge.id = 'flowia-badge';
   badge.style.cssText =
     'position:fixed;bottom:20px;right:20px;background:#667eea;color:white;padding:10px 18px;border-radius:24px;font-size:13px;z-index:999999;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-weight:500;';
-  badge.textContent = '✓ PlugIA Active';
+  badge.textContent = '✓ Flow IA Active';
   document.body.appendChild(badge);
 }
 
@@ -347,9 +369,9 @@ function stop(): void {
     clearInterval(timer);
     timer = null;
   }
-  console.log('⏹️ PlugIA stopped');
+  console.log('⏹️ [Flow IA] Stopped');
   
-  const badge = document.getElementById('plugia-badge');
+  const badge = document.getElementById('flowia-badge');
   if (badge) {
     badge.remove();
   }
@@ -361,7 +383,7 @@ function checkAndUpdate(): void {
   const isLoggedIn = platform ? isUserLoggedIn(platform) : false;
   const isOnNotif = platform ? isOnNotifications(platform) : false;
   
-  console.log('🔄 [PlugIA] checkAndUpdate:', { 
+  console.log('🔄 [Flow IA] checkAndUpdate:', { 
     platform, 
     isLoggedIn, 
     isOnNotif, 
@@ -371,12 +393,12 @@ function checkAndUpdate(): void {
   
   if (platform && isLoggedIn && isOnNotif) {
     if (!active) {
-      console.log('✅ [PlugIA] Conditions met, starting...');
+      console.log('✅ [Flow IA] Conditions met, starting...');
       start();
     }
   } else {
     if (active) {
-      console.log('⏹️ [PlugIA] Conditions not met, stopping...');
+      console.log('⏹️ [Flow IA] Conditions not met, stopping...');
       stop();
     }
   }

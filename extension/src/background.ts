@@ -5,31 +5,53 @@ async function getTokenFromSite(): Promise<string | null> {
   try {
     const SITE_URL = 'http://localhost:3000'; // TODO: Changer en production
     const siteUrlPattern = SITE_URL.replace('http://', '').replace('https://', '').split('/')[0];
-    const tabs = await chrome.tabs.query({ url: `*://${siteUrlPattern}/*` });
     
-    for (const tab of tabs) {
-      if (tab.id) {
+    console.log('🔍 [Background] Searching for Flow.IA tabs...', { siteUrlPattern });
+    
+    // Chercher tous les onglets (plus large recherche)
+    const allTabs = await chrome.tabs.query({});
+    const matchingTabs = allTabs.filter(tab => 
+      tab.url && (
+        tab.url.includes(siteUrlPattern) ||
+        tab.url.includes('localhost:3000') ||
+        tab.url.includes('flowia') ||
+        tab.url.includes('flow-ia')
+      )
+    );
+    
+    console.log('🔍 [Background] Found matching tabs:', matchingTabs.length);
+    
+    for (const tab of matchingTabs) {
+      if (tab.id && tab.url) {
         try {
+          console.log('🔍 [Background] Checking tab:', tab.id, tab.url);
+          
           const results = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
             func: () => {
-              return localStorage.getItem('token') || 
-                     localStorage.getItem('authToken') ||
-                     localStorage.getItem('access_token') ||
-                     localStorage.getItem('accessToken');
+              const token = localStorage.getItem('token') || 
+                           localStorage.getItem('authToken') ||
+                           localStorage.getItem('access_token') ||
+                           localStorage.getItem('accessToken');
+              console.log('🔍 [Background] Token in tab:', { hasToken: !!token });
+              return token;
             },
           });
           
           if (results && results[0]?.result) {
+            console.log('✅ [Background] Token found!');
             return results[0].result;
           }
-        } catch (err) {
+        } catch (err: any) {
+          console.log('⚠️ [Background] Could not access tab:', err.message);
           continue;
         }
       }
     }
-  } catch (err) {
-    console.error('Error getting token from site:', err);
+    
+    console.log('❌ [Background] No token found');
+  } catch (err: any) {
+    console.error('❌ [Background] Error getting token from site:', err);
   }
   
   return null;

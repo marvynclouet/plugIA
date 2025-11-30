@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "PlugIA Assistant",
+  "name": "Flow IA Assistant",
   "version": "1.0.0",
-  "description": "Automatise la capture de vos interactions TikTok et Instagram",
+  "description": "Flow IA - Automatise la capture de vos interactions TikTok et Instagram",
   "permissions": [
     "activeTab",
     "storage",
