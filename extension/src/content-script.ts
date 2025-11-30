@@ -89,15 +89,28 @@ function isOnNotifications(platform: string): boolean {
       // 2. Ou présence d'éléments spécifiques aux notifications
       const isNotificationsURL = window.location.pathname.includes('/notifications') || 
                                  window.location.pathname.includes('/notification');
-      const hasNotificationsPanel = document.querySelector('[data-e2e="notification-panel"]') !== null ||
-                                   document.querySelector('div[class*="notification"]') !== null ||
-                                   document.querySelector('div:has-text("Notifications")') !== null ||
-                                   document.querySelector('h1:has-text("Notifications")') !== null ||
-                                   // Vérifier si on voit des éléments de notifications (liste de followers, likes, etc.)
-                                   document.querySelector('div:has-text("Toutes les activités")') !== null ||
-                                   document.querySelector('div:has-text("J\'aime")') !== null ||
-                                   document.querySelector('div:has-text("Commentaires")') !== null;
-      return isNotificationsURL || hasNotificationsPanel;
+      
+      // Vérifier la présence du panneau de notifications via plusieurs méthodes
+      const hasNotificationsText = 
+        document.body.innerText.includes('Notifications') ||
+        document.body.innerText.includes('Toutes les activités') ||
+        document.body.innerText.includes('J\'aime') ||
+        document.body.innerText.includes('Commentaires') ||
+        document.body.innerText.includes('Mentions et étiquettes') ||
+        document.body.innerText.includes('Followers');
+      
+      // Vérifier les sélecteurs CSS possibles
+      const hasNotificationsElements = 
+        document.querySelector('[data-e2e="notification-panel"]') !== null ||
+        document.querySelector('div[class*="notification"]') !== null ||
+        document.querySelector('div[class*="Notification"]') !== null ||
+        // Chercher des éléments avec le texte "Notifications"
+        Array.from(document.querySelectorAll('*')).some(el => 
+          el.textContent?.trim() === 'Notifications' || 
+          el.textContent?.includes('Toutes les activités')
+        );
+      
+      return isNotificationsURL || hasNotificationsText || hasNotificationsElements;
     
     case 'instagram':
       // Instagram notifications peuvent être sur plusieurs pages
