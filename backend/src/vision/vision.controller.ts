@@ -14,7 +14,6 @@ import { AnalyzeScreenshotDto } from './dto/analyze-screenshot.dto';
 import { ExtractDomDto } from './dto/extract-dom.dto';
 
 @Controller('vision')
-@UseGuards(JwtAuthGuard)
 export class VisionController {
   private readonly logger = new Logger(VisionController.name);
 
