@@ -1,5 +1,6 @@
 // Configuration
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Note: process.env n'existe pas dans le navigateur, utiliser une valeur directe
+const API_URL = 'http://localhost:3001'; // TODO: Changer en production
 const INTERVAL = 30000; // 30 secondes
 
 let timer: NodeJS.Timeout | null = null;
@@ -22,14 +23,28 @@ function isUserLoggedIn(platform: string): boolean {
     switch (platform) {
       case 'tiktok':
         // Vérifier la présence de cookies de session ou d'éléments DOM indiquant une connexion
-        const hasTikTokSession = 
+        // TikTok utilise plusieurs cookies de session
+        const hasTikTokCookies = 
           document.cookie.includes('sessionid') || 
           document.cookie.includes('sid_tt') ||
           document.cookie.includes('sid_guard') ||
+          document.cookie.includes('sid_ucp_v1') ||
+          document.cookie.includes('uid_tt') ||
+          document.cookie.includes('ttwid');
+        
+        // Vérifier les éléments DOM qui indiquent une connexion
+        const hasTikTokDOM = 
           document.querySelector('[data-e2e="user-avatar"]') !== null ||
           document.querySelector('[data-e2e="nav-user"]') !== null ||
-          document.querySelector('a[href*="/upload"]') !== null; // Bouton upload = connecté
-        return hasTikTokSession;
+          document.querySelector('a[href*="/upload"]') !== null ||
+          // Vérifier la présence du panneau de notifications (indique qu'on est connecté)
+          document.querySelector('div:has-text("Notifications")') !== null ||
+          document.querySelector('div:has-text("Toutes les activités")') !== null ||
+          // Vérifier la sidebar de navigation (présente seulement si connecté)
+          document.querySelector('nav') !== null ||
+          document.querySelector('[role="navigation"]') !== null;
+        
+        return hasTikTokCookies || hasTikTokDOM;
       
       case 'instagram':
         // Vérifier les cookies Instagram ou la présence d'éléments de navigation utilisateur
@@ -69,7 +84,20 @@ function isUserLoggedIn(platform: string): boolean {
 function isOnNotifications(platform: string): boolean {
   switch (platform) {
     case 'tiktok':
-      return window.location.pathname.includes('/notifications');
+      // TikTok notifications peut être détecté par :
+      // 1. URL contient /notifications
+      // 2. Ou présence d'éléments spécifiques aux notifications
+      const isNotificationsURL = window.location.pathname.includes('/notifications') || 
+                                 window.location.pathname.includes('/notification');
+      const hasNotificationsPanel = document.querySelector('[data-e2e="notification-panel"]') !== null ||
+                                   document.querySelector('div[class*="notification"]') !== null ||
+                                   document.querySelector('div:has-text("Notifications")') !== null ||
+                                   document.querySelector('h1:has-text("Notifications")') !== null ||
+                                   // Vérifier si on voit des éléments de notifications (liste de followers, likes, etc.)
+                                   document.querySelector('div:has-text("Toutes les activités")') !== null ||
+                                   document.querySelector('div:has-text("J\'aime")') !== null ||
+                                   document.querySelector('div:has-text("Commentaires")') !== null;
+      return isNotificationsURL || hasNotificationsPanel;
     
     case 'instagram':
       // Instagram notifications peuvent être sur plusieurs pages

@@ -1,16 +1,21 @@
 // Background service worker pour l'extension PlugIA
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  console.log('📨 [Background] Message received:', msg.action);
+  
   if (msg.action === 'capture') {
-    // Capturer l'onglet visible
+    console.log('📸 [Background] Capturing screenshot...', { tabId: sender.tab?.id, windowId: sender.tab?.windowId });
+    // Capturer l'onglet visible (utiliser windowId si disponible, sinon null pour la fenêtre active)
+    const windowId = sender.tab?.windowId;
     chrome.tabs.captureVisibleTab(
-      null,
+      windowId || null,
       { format: 'png' },
       (screenshot) => {
         if (chrome.runtime.lastError) {
-          console.error('❌ Capture error:', chrome.runtime.lastError);
+          console.error('❌ [Background] Capture error:', chrome.runtime.lastError);
           sendResponse({ error: chrome.runtime.lastError.message });
         } else {
+          console.log('📸 [Background] Screenshot captured:', { hasScreenshot: !!screenshot, length: screenshot?.length });
           sendResponse({ screenshot });
         }
       },
@@ -19,6 +24,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 
   if (msg.action === 'notify') {
+    console.log('🔔 [Background] Creating notification:', msg.message);
     // Créer une notification
     chrome.notifications.create({
       type: 'basic',

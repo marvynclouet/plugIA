@@ -1,7 +1,8 @@
 // Popup script pour l'extension PlugIA
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+// Note: process.env n'existe pas dans le navigateur
+const API_URL = 'http://localhost:3001'; // TODO: Changer en production
+const SITE_URL = 'http://localhost:3000'; // TODO: Changer en production
 
 // Éléments DOM
 const loginForm = document.getElementById('login-form') as HTMLElement;
