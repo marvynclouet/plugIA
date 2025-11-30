@@ -5,22 +5,106 @@ const INTERVAL = 30000; // 30 secondes
 let timer: NodeJS.Timeout | null = null;
 let active = false;
 
-function detectPlatform(): 'tiktok' | 'instagram' | null {
+function detectPlatform(): 'tiktok' | 'instagram' | 'facebook' | 'twitter' | null {
   const host = window.location.hostname;
   if (host.includes('tiktok.com')) return 'tiktok';
   if (host.includes('instagram.com')) return 'instagram';
+  if (host.includes('facebook.com')) return 'facebook';
+  if (host.includes('twitter.com') || host.includes('x.com')) return 'twitter';
   return null;
 }
 
-function isOnNotifications(): boolean {
-  const path = window.location.pathname.toLowerCase();
-  return path.includes('/notifications') || path.includes('/inbox');
+/**
+ * Détecte si l'utilisateur est connecté sur la plateforme actuelle
+ */
+function isUserLoggedIn(platform: string): boolean {
+  try {
+    switch (platform) {
+      case 'tiktok':
+        // Vérifier la présence de cookies de session ou d'éléments DOM indiquant une connexion
+        const hasTikTokSession = 
+          document.cookie.includes('sessionid') || 
+          document.cookie.includes('sid_tt') ||
+          document.cookie.includes('sid_guard') ||
+          document.querySelector('[data-e2e="user-avatar"]') !== null ||
+          document.querySelector('[data-e2e="nav-user"]') !== null ||
+          document.querySelector('a[href*="/upload"]') !== null; // Bouton upload = connecté
+        return hasTikTokSession;
+      
+      case 'instagram':
+        // Vérifier les cookies Instagram ou la présence d'éléments de navigation utilisateur
+        const hasInstagramSession = 
+          document.cookie.includes('sessionid') ||
+          document.cookie.includes('ds_user_id') ||
+          document.querySelector('svg[aria-label="Home"]') !== null ||
+          document.querySelector('a[href*="/direct/"]') !== null ||
+          document.querySelector('a[href*="/accounts/"]') !== null;
+        return hasInstagramSession;
+      
+      case 'facebook':
+        const hasFacebookSession = 
+          document.cookie.includes('c_user') ||
+          document.cookie.includes('xs') ||
+          document.querySelector('[aria-label*="Your profile"]') !== null ||
+          document.querySelector('[aria-label*="Account"]') !== null;
+        return hasFacebookSession;
+      
+      case 'twitter':
+        const hasTwitterSession = 
+          document.cookie.includes('auth_token') ||
+          document.cookie.includes('ct0') ||
+          document.querySelector('[data-testid="SideNav_AccountSwitcher_Button"]') !== null ||
+          document.querySelector('[data-testid="AppTabBar_Profile_Link"]') !== null;
+        return hasTwitterSession;
+      
+      default:
+        return false;
+    }
+  } catch (error) {
+    console.error('Error checking login status:', error);
+    return false;
+  }
+}
+
+function isOnNotifications(platform: string): boolean {
+  switch (platform) {
+    case 'tiktok':
+      return window.location.pathname.includes('/notifications');
+    
+    case 'instagram':
+      // Instagram notifications peuvent être sur plusieurs pages
+      return window.location.pathname.includes('/direct/inbox/') ||
+             window.location.pathname.includes('/accounts/activity/') ||
+             window.location.pathname === '/'; // Page d'accueil avec notifications
+    
+    case 'facebook':
+      return window.location.pathname.includes('/notifications') ||
+             window.location.pathname.includes('/messages');
+    
+    case 'twitter':
+      return window.location.pathname.includes('/notifications') ||
+             window.location.pathname.includes('/messages');
+    
+    default:
+      return false;
+  }
 }
 
 async function capture(): Promise<void> {
   const platform = detectPlatform();
-  if (!platform || !isOnNotifications()) {
+  if (!platform) {
+    return; // Pas sur une plateforme supportée
+  }
+
+  // Vérifier si l'utilisateur est connecté
+  if (!isUserLoggedIn(platform)) {
+    console.log(`PlugIA: User not logged in on ${platform}. Skipping capture.`);
     return;
+  }
+
+  // Vérifier si on est sur une page de notifications
+  if (!isOnNotifications(platform)) {
+    return; // Pas sur une page de notifications
   }
 
   console.log(`📸 PlugIA capturing ${platform} notifications...`);
@@ -71,12 +155,6 @@ async function capture(): Promise<void> {
         action: 'notify',
         message: `${data.newInteractions} nouvelles interactions détectées!`,
       });
-
-      // Mettre à jour le badge
-      chrome.runtime.sendMessage({
-        action: 'updateBadge',
-        count: data.newInteractions,
-      });
     }
   } catch (err: any) {
     console.error('❌ PlugIA capture error:', err.message);
@@ -117,23 +195,34 @@ function stop(): void {
   }
 }
 
-// Démarrer si on est déjà sur la page notifications
-if (isOnNotifications()) {
-  start();
+// Fonction pour vérifier et démarrer/arrêter selon les conditions
+function checkAndUpdate(): void {
+  const platform = detectPlatform();
+  if (platform && isUserLoggedIn(platform) && isOnNotifications(platform)) {
+    if (!active) {
+      start();
+    }
+  } else {
+    if (active) {
+      stop();
+    }
+  }
 }
+
+// Initial check
+checkAndUpdate();
 
 // Observer les changements d'URL (SPA navigation)
 let lastUrl = location.href;
 new MutationObserver(() => {
   if (location.href !== lastUrl) {
     lastUrl = location.href;
-    if (isOnNotifications()) {
-      start();
-    } else {
-      stop();
-    }
+    checkAndUpdate();
   }
 }).observe(document, { subtree: true, childList: true });
+
+// Vérifier périodiquement le statut de connexion (au cas où l'utilisateur se connecte)
+setInterval(checkAndUpdate, 5000); // Vérifier toutes les 5 secondes
 
 // Écouter les messages du background
 chrome.runtime.onMessage.addListener((msg) => {
@@ -143,4 +232,3 @@ chrome.runtime.onMessage.addListener((msg) => {
     stop();
   }
 });
-

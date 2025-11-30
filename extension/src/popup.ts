@@ -92,67 +92,35 @@ async function showLoggedIn(user: any, token: string): Promise<void> {
   statusDiv.style.display = 'block';
   
   if (statusText) {
-    statusText.textContent = `Connecté en tant que ${user.email || user.name || 'Utilisateur'}`;
+    statusText.innerHTML = `
+      <p class="text-sm font-semibold text-green-400 mb-2">✓ Connecté à PlugIA</p>
+      <p class="text-xs text-gray-300">${user.email || user.name || 'Utilisateur'}</p>
+    `;
   }
 
-  // Récupérer les comptes sociaux connectés
-  try {
-    // Récupérer le workspace d'abord
-    const workspacesResponse = await fetch(`${API_URL}/workspaces`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (workspacesResponse.ok) {
-      const workspaces = await workspacesResponse.json();
-      if (workspaces.length > 0) {
-        const workspaceId = workspaces[0].id;
-        
-        // Récupérer les comptes du workspace
-        const accountsResponse = await fetch(`${API_URL}/social-accounts/workspace/${workspaceId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (accountsResponse.ok) {
-          const accounts = await accountsResponse.json();
-          displayAccounts(accounts);
-        }
-      }
-    }
-  } catch (err) {
-    console.error('Error fetching accounts:', err);
-  }
-}
-
-function displayAccounts(accounts: any[]): void {
-  if (!accountsList) return;
-  
-  if (accounts.length === 0) {
-    accountsList.innerHTML = '<p class="text-sm text-gray-400 mt-2">Aucun compte connecté. Connectez-vous sur le site Flow.IA.</p>';
-    return;
-  }
-
-  const platformIcons: Record<string, string> = {
-    tiktok: '🎵',
-    instagram: '📷',
-    facebook: '👍',
-    twitter: '🐦',
-  };
-
-  accountsList.innerHTML = accounts.map((account: any) => `
-    <div class="flex items-center gap-2 p-2 rounded bg-white/5">
-      <span class="text-lg">${platformIcons[account.platform] || '🔗'}</span>
-      <div class="flex-1">
-        <p class="text-sm font-medium text-white">@${account.platformUsername}</p>
-        <p class="text-xs text-gray-400">${account.platform}</p>
+  // Afficher les instructions simples
+  if (accountsList) {
+    accountsList.innerHTML = `
+      <div class="mt-4 p-3 rounded bg-blue-500/10 border border-blue-500/30">
+        <p class="text-xs font-semibold text-blue-300 mb-2">🚀 Comment ça marche :</p>
+        <ol class="text-xs text-gray-300 space-y-1 list-decimal list-inside">
+          <li>Allez sur TikTok, Instagram, Facebook ou Twitter</li>
+          <li>Connectez-vous normalement (comme d'habitude)</li>
+          <li>Allez sur la page Notifications</li>
+          <li>L'extension capture automatiquement ! ✨</li>
+        </ol>
       </div>
-      ${account.isActive ? '<span class="text-xs text-green-400">✓</span>' : '<span class="text-xs text-gray-400">⏸</span>'}
-    </div>
-  `).join('');
+      <div class="mt-3 p-2 rounded bg-green-500/10 border border-green-500/30">
+        <p class="text-xs text-green-300">
+          💡 <strong>Astuce :</strong> L'extension détecte automatiquement quand vous êtes connecté sur un réseau social. Aucune configuration supplémentaire nécessaire !
+        </p>
+      </div>
+    `;
+  }
 }
+
+// Fonction supprimée - plus besoin d'afficher les comptes connectés
+// L'extension détecte automatiquement les sessions actives
 
 function showLoggedOut(): void {
   loginForm.style.display = 'none';
