@@ -8,7 +8,7 @@ import { Instagram, Linkedin, Music, Twitter, Facebook } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { TikTokConnectDialog } from './tiktok-connect-dialog'
+// TikTokConnectDialog n'est plus nécessaire - l'extension détecte automatiquement
 
 const platformCards = [
   {
@@ -213,7 +213,7 @@ export default function AccountsPage() {
                     Connecté
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="text-xs text-white/40 border-white/10">
+                  <Badge variant="ghost" className="text-xs text-white/40 border-white/10">
                     Non connecté
                   </Badge>
                 )}
@@ -309,9 +309,9 @@ export default function AccountsPage() {
                       </div>
                     )}
                     <Button
-                      variant="destructive"
+                      variant="outline"
                       size="sm"
-                      className="w-full mt-2"
+                      className="w-full mt-2 border-red-500/30 text-red-200 hover:bg-red-500/10"
                       onClick={async () => {
                         if (!confirm(`Êtes-vous sûr de vouloir déconnecter votre compte ${platform.name} ?\n\nLe monitoring sera arrêté et le compte sera désactivé.`)) {
                           return
@@ -333,10 +333,33 @@ export default function AccountsPage() {
                   </>
                 ) : (
                   platform.id === 'tiktok' ? (
-                    <TikTokConnectDialog 
-                      workspaceId={selectedWorkspaceId} 
-                      onSuccess={() => refetchAccounts()}
-                    />
+                    <div className="space-y-4">
+                      <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="text-2xl">🚀</div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-blue-200 mb-2">Connexion automatique via l'extension</h3>
+                            <p className="text-sm text-blue-200/80 mb-3">
+                              Plus besoin de configurer manuellement ! L'extension Chrome détecte automatiquement quand vous êtes connecté sur TikTok.
+                            </p>
+                            <ol className="text-xs text-blue-200/70 space-y-1 list-decimal list-inside mb-3">
+                              <li>Installez l'extension Chrome PlugIA</li>
+                              <li>Connectez-vous à PlugIA dans le popup de l'extension</li>
+                              <li>Allez sur TikTok et connectez-vous normalement</li>
+                              <li>Allez sur la page Notifications</li>
+                              <li>L'extension capture automatiquement ! ✨</li>
+                            </ol>
+                            <a 
+                              href="/extension" 
+                              target="_blank"
+                              className="inline-block text-xs text-blue-300 hover:text-blue-200 underline"
+                            >
+                              📥 Installer l'extension Chrome →
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   ) : (
                     <Button 
                       className="w-full" 
@@ -383,7 +406,7 @@ export default function AccountsPage() {
                     <td className="py-4">@{account.platformUsername}</td>
                     <td className="py-4">{new Date(account.createdAt).toLocaleDateString('fr-FR')}</td>
                     <td className="py-4">
-                      <Badge variant={account.isActive ? 'neon' : 'ghost'}>
+                      <Badge variant={account.isActive ? 'default' : 'ghost'}>
                         {account.isActive ? 'Actif' : 'Inactif'}
                       </Badge>
                     </td>
