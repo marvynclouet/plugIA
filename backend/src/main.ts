@@ -18,8 +18,28 @@ async function bootstrap() {
     process.env.FRONTEND_URL ||
     'http://localhost:3000,http://localhost:3001';
 
+  // Permettre les requêtes depuis les extensions Chrome (chrome-extension://)
   app.enableCors({
-    origin: corsOrigins.split(',').map((origin) => origin.trim()),
+    origin: (origin, callback) => {
+      // Autoriser les requêtes sans origin (extensions Chrome, Postman, etc.)
+      if (!origin) {
+        return callback(null, true);
+      }
+      
+      const allowedOrigins = corsOrigins.split(',').map((o) => o.trim());
+      
+      // Autoriser les extensions Chrome
+      if (origin.startsWith('chrome-extension://')) {
+        return callback(null, true);
+      }
+      
+      // Autoriser les origines configurées
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      callback(null, true); // Autoriser toutes les origines en développement
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
