@@ -1,10 +1,10 @@
 // Configuration
-// Note: process.env n'existe pas dans le navigateur, utiliser une valeur directe
 const API_URL = 'http://localhost:3001'; // TODO: Changer en production
 const INTERVAL = 30000; // 30 secondes
 
 let timer: NodeJS.Timeout | null = null;
 let active = false;
+let isScrolling = false;
 
 function detectPlatform(): 'tiktok' | 'instagram' | 'facebook' | 'twitter' | null {
   const host = window.location.hostname;
@@ -22,8 +22,6 @@ function isUserLoggedIn(platform: string): boolean {
   try {
     switch (platform) {
       case 'tiktok':
-        // Vérifier la présence de cookies de session ou d'éléments DOM indiquant une connexion
-        // TikTok utilise plusieurs cookies de session
         const hasTikTokCookies = 
           document.cookie.includes('sessionid') || 
           document.cookie.includes('sid_tt') ||
@@ -33,8 +31,6 @@ function isUserLoggedIn(platform: string): boolean {
           document.cookie.includes('ttwid') ||
           document.cookie.includes('passport_csrf_token');
         
-        // Vérifier les éléments DOM qui indiquent une connexion
-        // Utiliser textContent au lieu de :has-text() qui n'existe pas
         const bodyText = document.body?.textContent || '';
         const hasNotificationsText = 
           bodyText.includes('Notifications') ||
@@ -46,10 +42,8 @@ function isUserLoggedIn(platform: string): boolean {
           document.querySelector('[data-e2e="user-avatar"]') !== null ||
           document.querySelector('[data-e2e="nav-user"]') !== null ||
           document.querySelector('a[href*="/upload"]') !== null ||
-          // Vérifier la sidebar de navigation (présente seulement si connecté)
           document.querySelector('nav') !== null ||
           document.querySelector('[role="navigation"]') !== null ||
-          // Vérifier la présence d'icônes de notifications (badge rouge)
           document.querySelector('[data-e2e="nav-inbox"]') !== null ||
           document.querySelector('svg[aria-label*="Inbox"]') !== null ||
           hasNotificationsText;
@@ -57,7 +51,6 @@ function isUserLoggedIn(platform: string): boolean {
         return hasTikTokCookies || hasTikTokDOM;
       
       case 'instagram':
-        // Vérifier les cookies Instagram ou la présence d'éléments de navigation utilisateur
         const hasInstagramSession = 
           document.cookie.includes('sessionid') ||
           document.cookie.includes('ds_user_id') ||
@@ -86,7 +79,7 @@ function isUserLoggedIn(platform: string): boolean {
         return false;
     }
   } catch (error) {
-    console.error('Error checking login status:', error);
+    console.error('❌ [Flow IA] Error checking login status:', error);
     return false;
   }
 }
@@ -94,8 +87,6 @@ function isUserLoggedIn(platform: string): boolean {
 function isOnNotifications(platform: string): boolean {
   switch (platform) {
     case 'tiktok':
-      // TikTok notifications peut être détecté par :
-      // 1. URL contient /notifications
       const isNotificationsURL = window.location.pathname.includes('/notifications') || 
                                  window.location.pathname.includes('/notification');
       
@@ -103,7 +94,6 @@ function isOnNotifications(platform: string): boolean {
         return true;
       }
       
-      // 2. Vérifier la présence du panneau de notifications via le texte dans le body
       const bodyText = document.body?.textContent || document.body?.innerText || '';
       const hasNotificationsText = 
         bodyText.includes('Notifications') ||
@@ -113,12 +103,10 @@ function isOnNotifications(platform: string): boolean {
         bodyText.includes('Mentions et étiquettes') ||
         bodyText.includes('Followers');
       
-      // 3. Vérifier les sélecteurs CSS possibles
       const hasNotificationsElements = 
         document.querySelector('[data-e2e="notification-panel"]') !== null ||
         document.querySelector('div[class*="notification"]') !== null ||
         document.querySelector('div[class*="Notification"]') !== null ||
-        // Chercher des éléments avec le texte "Notifications" (méthode manuelle)
         Array.from(document.querySelectorAll('div, span, h1, h2, h3')).some(el => {
           const text = el.textContent?.trim() || '';
           return text === 'Notifications' || text.includes('Toutes les activités');
@@ -127,10 +115,9 @@ function isOnNotifications(platform: string): boolean {
       return hasNotificationsText || hasNotificationsElements;
     
     case 'instagram':
-      // Instagram notifications peuvent être sur plusieurs pages
       return window.location.pathname.includes('/direct/inbox/') ||
              window.location.pathname.includes('/accounts/activity/') ||
-             window.location.pathname === '/'; // Page d'accueil avec notifications
+             window.location.pathname === '/';
     
     case 'facebook':
       return window.location.pathname.includes('/notifications') ||
@@ -145,60 +132,223 @@ function isOnNotifications(platform: string): boolean {
   }
 }
 
+/**
+ * Scroll automatiquement jusqu'en bas de la page pour charger toutes les interactions
+ */
+async function scrollToBottom(): Promise<void> {
+  if (isScrolling) return;
+  isScrolling = true;
+  
+  console.log('📜 [Flow IA] Starting auto-scroll to load all interactions...');
+  
+  let lastHeight = 0;
+  let sameHeightCount = 0;
+  const maxSameHeight = 3; // Arrêter si la hauteur ne change pas 3 fois de suite
+  
+  return new Promise((resolve) => {
+    const scrollInterval = setInterval(() => {
+      const currentHeight = document.documentElement.scrollHeight;
+      window.scrollTo(0, currentHeight);
+      
+      // Attendre un peu pour que le contenu se charge
+      setTimeout(() => {
+        const newHeight = document.documentElement.scrollHeight;
+        
+        if (newHeight === lastHeight) {
+          sameHeightCount++;
+          if (sameHeightCount >= maxSameHeight) {
+            console.log('✅ [Flow IA] Reached bottom, all interactions loaded');
+            clearInterval(scrollInterval);
+            isScrolling = false;
+            resolve();
+          }
+        } else {
+          sameHeightCount = 0;
+          lastHeight = newHeight;
+        }
+      }, 500);
+    }, 1000);
+    
+    // Timeout de sécurité (30 secondes max)
+    setTimeout(() => {
+      clearInterval(scrollInterval);
+      isScrolling = false;
+      console.log('⏱️ [Flow IA] Scroll timeout reached');
+      resolve();
+    }, 30000);
+  });
+}
+
+/**
+ * Extrait les interactions TikTok depuis le DOM
+ */
+function extractTikTokInteractions(): Array<{
+  username: string;
+  displayName?: string;
+  type: 'like' | 'comment' | 'follow' | 'share' | 'mention';
+  timestamp: string;
+  content?: string;
+  videoUrl?: string;
+}> {
+  const interactions: Array<{
+    username: string;
+    displayName?: string;
+    type: 'like' | 'comment' | 'follow' | 'share' | 'mention';
+    timestamp: string;
+    content?: string;
+    videoUrl?: string;
+  }> = [];
+  
+  try {
+    console.log('🔍 [Flow IA] Extracting interactions from DOM...');
+    
+    // Chercher tous les éléments de notifications
+    // TikTok utilise différentes structures selon le type d'interaction
+    
+    // Méthode 1 : Chercher les conteneurs de notifications
+    const notificationContainers = document.querySelectorAll('[class*="notification"], [class*="Notification"], [data-e2e*="notification"]');
+    
+    // Méthode 2 : Chercher par structure de liste
+    const listItems = document.querySelectorAll('div[class*="item"], div[class*="Item"], li[class*="notification"]');
+    
+    // Méthode 3 : Chercher par patterns de texte
+    const allDivs = Array.from(document.querySelectorAll('div'));
+    
+    for (const element of [...Array.from(notificationContainers), ...Array.from(listItems), ...allDivs]) {
+      const text = element.textContent || '';
+      const innerHTML = element.innerHTML || '';
+      
+      // Détecter les patterns d'interactions
+      
+      // Pattern 1: "username a aimé votre vidéo" ou "username liked your video"
+      if (text.match(/a aimé|liked|aimé votre|liked your/i)) {
+        const usernameMatch = text.match(/([a-zA-Z0-9_.]+)\s+(a aimé|liked)/i);
+        const timeMatch = text.match(/(\d+\s*(min|h|jour|day|hour|minute)s?\s*(ago|il y a)?)/i);
+        
+        if (usernameMatch) {
+          interactions.push({
+            username: usernameMatch[1],
+            type: 'like',
+            timestamp: timeMatch ? timeMatch[0] : 'unknown',
+            content: text.substring(0, 200), // Extraire un extrait
+          });
+        }
+      }
+      
+      // Pattern 2: "username a commenté" ou "username commented"
+      if (text.match(/a commenté|commented|commentaire|comment/i)) {
+        const usernameMatch = text.match(/([a-zA-Z0-9_.]+)\s+(a commenté|commented|:)/i);
+        const timeMatch = text.match(/(\d+\s*(min|h|jour|day|hour|minute)s?\s*(ago|il y a)?)/i);
+        const commentMatch = text.match(/["']([^"']{10,200})["']/);
+        
+        if (usernameMatch) {
+          interactions.push({
+            username: usernameMatch[1],
+            type: 'comment',
+            timestamp: timeMatch ? timeMatch[0] : 'unknown',
+            content: commentMatch ? commentMatch[1] : text.substring(0, 200),
+          });
+        }
+      }
+      
+      // Pattern 3: "username vous suit" ou "username started following"
+      if (text.match(/vous suit|started following|commencé à te suivre|follows you/i)) {
+        const usernameMatch = text.match(/([a-zA-Z0-9_.]+)\s+(vous suit|started following|commencé à te suivre)/i);
+        const timeMatch = text.match(/(\d+\s*(min|h|jour|day|hour|minute)s?\s*(ago|il y a)?)/i);
+        
+        if (usernameMatch) {
+          interactions.push({
+            username: usernameMatch[1],
+            type: 'follow',
+            timestamp: timeMatch ? timeMatch[0] : 'unknown',
+          });
+        }
+      }
+      
+      // Pattern 4: "username vous a mentionné" ou "username mentioned you"
+      if (text.match(/vous a mentionné|mentioned you|t'a mentionné/i)) {
+        const usernameMatch = text.match(/([a-zA-Z0-9_.]+)\s+(vous a mentionné|mentioned you|t'a mentionné)/i);
+        const timeMatch = text.match(/(\d+\s*(min|h|jour|day|hour|minute)s?\s*(ago|il y a)?)/i);
+        
+        if (usernameMatch) {
+          interactions.push({
+            username: usernameMatch[1],
+            type: 'mention',
+            timestamp: timeMatch ? timeMatch[0] : 'unknown',
+            content: text.substring(0, 200),
+          });
+        }
+      }
+      
+      // Pattern 5: "username a partagé" ou "username shared"
+      if (text.match(/a partagé|shared|reposted|republié/i)) {
+        const usernameMatch = text.match(/([a-zA-Z0-9_.]+)\s+(a partagé|shared|reposted|republié)/i);
+        const timeMatch = text.match(/(\d+\s*(min|h|jour|day|hour|minute)s?\s*(ago|il y a)?)/i);
+        
+        if (usernameMatch) {
+          interactions.push({
+            username: usernameMatch[1],
+            type: 'share',
+            timestamp: timeMatch ? timeMatch[0] : 'unknown',
+          });
+        }
+      }
+    }
+    
+    // Dédupliquer par username + type + timestamp
+    const uniqueInteractions = interactions.filter((interaction, index, self) =>
+      index === self.findIndex((i) => 
+        i.username === interaction.username &&
+        i.type === interaction.type &&
+        i.timestamp === interaction.timestamp
+      )
+    );
+    
+    console.log(`✅ [Flow IA] Extracted ${uniqueInteractions.length} unique interactions from DOM`);
+    return uniqueInteractions;
+    
+  } catch (error) {
+    console.error('❌ [Flow IA] Error extracting interactions:', error);
+    return [];
+  }
+}
+
+/**
+ * Capture et extrait les interactions depuis le DOM
+ */
 async function capture(): Promise<void> {
   const platform = detectPlatform();
   console.log('🔍 [Flow IA] Checking platform...', { platform, url: window.location.href });
   
   if (!platform) {
     console.log('❌ [Flow IA] Platform not supported');
-    return; // Pas sur une plateforme supportée
+    return;
   }
 
-  // Vérifier si l'utilisateur est connecté
   const isLoggedIn = isUserLoggedIn(platform);
-  console.log('🔍 [Flow IA] Checking login status...', { platform, isLoggedIn, cookies: document.cookie.substring(0, 100) });
+  console.log('🔍 [Flow IA] Checking login status...', { platform, isLoggedIn });
   
   if (!isLoggedIn) {
     console.log(`⚠️ [Flow IA] User not logged in on ${platform}. Skipping capture.`);
     return;
   }
 
-  // Vérifier si on est sur une page de notifications
   const isOnNotif = isOnNotifications(platform);
   console.log('🔍 [Flow IA] Checking notifications page...', { platform, isOnNotif, pathname: window.location.pathname });
   
   if (!isOnNotif) {
     console.log(`⚠️ [Flow IA] Not on notifications page for ${platform}`);
-    return; // Pas sur une page de notifications
-  }
-
-  console.log(`📸 [Flow IA] Starting capture for ${platform} notifications...`);
-
-  // Demander au background script de capturer
-  console.log('📸 [Flow IA] Requesting screenshot from background...');
-  const screenshot = await new Promise<string>((resolve) => {
-    chrome.runtime.sendMessage({ action: 'capture' }, (response) => {
-      console.log('📸 [Flow IA] Screenshot response:', { hasScreenshot: !!response?.screenshot, length: response?.screenshot?.length });
-      resolve(response?.screenshot || '');
-    });
-  });
-
-  if (!screenshot) {
-    console.error('❌ [Flow IA] No screenshot captured');
     return;
   }
 
-  console.log('✅ [Flow IA] Screenshot captured, length:', screenshot.length);
+  console.log(`📸 [Flow IA] Starting DOM extraction for ${platform} notifications...`);
 
   // Récupérer le token d'authentification
-  // D'abord essayer depuis le storage de l'extension
   let { authToken } = await chrome.storage.sync.get(['authToken']);
   
-  // Si pas trouvé, essayer de récupérer depuis le site Flow.IA
   if (!authToken) {
     console.log('🔍 [Flow IA] No token in extension storage, trying to get from site...');
     try {
-      // Demander au background de récupérer le token depuis le site
       const tokenFromSite = await new Promise<string | null>((resolve) => {
         chrome.runtime.sendMessage({ action: 'getTokenFromSite' }, (response) => {
           console.log('🔍 [Flow IA] Response from background:', { hasToken: !!response?.token });
@@ -224,7 +374,6 @@ async function capture(): Promise<void> {
   if (!authToken) {
     console.error('❌ [Flow IA] No auth token found. Trying to get from site one more time...');
     
-    // Essayer une dernière fois de récupérer depuis le site
     try {
       const tokenFromSite = await new Promise<string | null>((resolve) => {
         chrome.runtime.sendMessage({ action: 'getTokenFromSite' }, (response) => {
@@ -241,9 +390,7 @@ async function capture(): Promise<void> {
       console.error('❌ [Flow IA] Error in last attempt:', err);
     }
     
-    // Si toujours pas de token après toutes les tentatives, afficher notification
     if (!authToken) {
-      // Afficher une notification visuelle plus visible
       const notification = document.createElement('div');
       notification.id = 'flowia-auth-warning';
       notification.style.cssText = `
@@ -273,7 +420,6 @@ async function capture(): Promise<void> {
         </div>
       `;
       
-      // Ajouter animation CSS
       if (!document.getElementById('flowia-notification-style')) {
         const style = document.createElement('style');
         style.id = 'flowia-notification-style';
@@ -294,8 +440,6 @@ async function capture(): Promise<void> {
       
       document.body.appendChild(notification);
       
-      // Ne pas supprimer automatiquement - laisser l'utilisateur la fermer
-      // Mais supprimer si l'utilisateur se connecte
       const checkToken = setInterval(() => {
         chrome.storage.sync.get(['authToken'], (result) => {
           if (result.authToken) {
@@ -305,7 +449,6 @@ async function capture(): Promise<void> {
         });
       }, 2000);
       
-      // Supprimer après 30 secondes si toujours pas de token
       setTimeout(() => {
         if (notification.parentNode) {
           notification.remove();
@@ -313,23 +456,36 @@ async function capture(): Promise<void> {
         clearInterval(checkToken);
       }, 30000);
       
-      return; // Pas de token, on ne peut pas continuer
+      return;
     }
   }
 
   try {
-    console.log('📡 [Flow IA] Sending screenshot to API...', { apiUrl: API_URL, platform, url: window.location.href });
+    // 1. Scroll automatiquement pour charger toutes les interactions
+    await scrollToBottom();
     
-    const response = await fetch(`${API_URL}/vision/analyze`, {
+    // 2. Extraire les interactions depuis le DOM
+    const interactions = extractTikTokInteractions();
+    
+    if (interactions.length === 0) {
+      console.log('ℹ️ [Flow IA] No interactions found in DOM');
+      return;
+    }
+    
+    console.log(`📊 [Flow IA] Extracted ${interactions.length} interactions, sending to API...`);
+    
+    // 3. Envoyer à l'API
+    const response = await fetch(`${API_URL}/vision/extract-dom`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${authToken}`,
       },
       body: JSON.stringify({
-        screenshot,
         platform,
         url: window.location.href,
+        interactions,
+        extractedAt: new Date().toISOString(),
       }),
     });
 
@@ -342,11 +498,10 @@ async function capture(): Promise<void> {
     }
 
     const data = await response.json();
-    console.log('✅ [Flow IA] Analysis result:', data);
+    console.log('✅ [Flow IA] Extraction result:', data);
 
     if (data.newInteractions > 0) {
       console.log(`🎉 [Flow IA] ${data.newInteractions} nouvelles interactions détectées!`);
-      // Notifier l'utilisateur
       chrome.runtime.sendMessage({
         action: 'notify',
         message: `${data.newInteractions} nouvelles interactions détectées!`,
